@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Affiliate Studio Capture",
+  "version": "0.2.0",
+  "description": "Read visible Shopee Affiliate offers for local Studio.",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "https://affiliate.shopee.co.th/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://127.0.0.1/*"
+      ],
+      "js": [
+        "studio.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://affiliate.shopee.co.th/offer/product_offer*"
+      ],
+      "js": [
+        "offers.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

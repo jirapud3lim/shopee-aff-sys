@@ -15,6 +15,7 @@ from app.operations import router as operations_router
 from app.products import router as products_router
 from app.publishing import router as publishing_router
 from app.renders import router as renders_router
+from app.shopee_offers import router as shopee_offers_router
 
 app = FastAPI(
     title="Shopee Affiliate Automation API",
@@ -26,7 +27,7 @@ app = FastAPI(
 
 for feature_router in (
     products_router, renders_router, publishing_router, meta_publishing_router,
-    affiliate_reports_router, campaigns_router, operations_router, google_trends_router,
+    affiliate_reports_router, campaigns_router, operations_router, google_trends_router, shopee_offers_router,
 ):
     app.include_router(feature_router)
 

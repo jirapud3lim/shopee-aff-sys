@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import AffiliateResults from "./affiliate-results";
 import Campaigns from "./campaigns";
 import MetaPublishing from "./meta-publishing";
+import ShopeeOffers from "./shopee-offers";
 import TrendExplorer from "./trend-explorer";
 
 type Workspace = { id: string; name: string; role: string };
@@ -99,8 +100,9 @@ export default function Studio() {
   const activeLink = channelLinks.find((link) => link.channel === linkChannel);
   const facebookAffiliate = channelLinks.find((link) => link.channel === "facebook")?.affiliate_url;
   const showingResults = anchor === "affiliate-results";
+  const showingOffers = anchor === "shopee-offers";
   const showingTrends = anchor === "trends";
-  const showingWorkspace = !showingResults && !showingTrends;
+  const showingWorkspace = !showingResults && !showingTrends && !showingOffers;
 
   useEffect(() => {
     const syncAnchor = () => setAnchor(window.location.hash.slice(1));
@@ -113,7 +115,7 @@ export default function Studio() {
     if (!workspaceId) return;
     const target = document.getElementById(anchor);
     target?.scrollIntoView();
-    if (anchor === "affiliate-results" || anchor === "trends") target?.querySelector("h1")?.focus({ preventScroll: true });
+    if (anchor === "affiliate-results" || anchor === "trends" || anchor === "shopee-offers") target?.querySelector("h1")?.focus({ preventScroll: true });
     if (anchor === "products") target?.querySelector("h2")?.focus({ preventScroll: true });
   }, [anchor, workspaceId]);
 
@@ -397,6 +399,7 @@ export default function Studio() {
           </details>
         </div>
         {workspaceId && <nav aria-label="เมนู Studio">
+          <a href="#shopee-offers" aria-current={showingOffers ? "location" : undefined}>สินค้าขายดีและค่าคอม</a>
           {steps.map((step) => <a href={`#${step.anchor}`} key={step.anchor}>{step.title}</a>)}
           <a href="#affiliate-results" aria-current={showingResults ? "location" : undefined}>ผลลัพธ์ Affiliate</a>
           <a href="#trends" aria-current={showingTrends ? "location" : undefined}>Google Trends</a>
@@ -411,6 +414,9 @@ export default function Studio() {
           <div hidden={!showingResults}>
             <AffiliateResults key={workspaceId} active={showingResults} busy={!!busy} scope={scope}
               token={token} products={products} onProduct={openReportProduct} request={api} />
+          </div>
+          <div hidden={!showingOffers}>
+            <ShopeeOffers key={workspaceId} active={showingOffers} scope={scope} token={token} request={api} />
           </div>
           <div hidden={!showingTrends}>
             <TrendExplorer key={workspaceId} active={showingTrends} scope={scope} token={token}

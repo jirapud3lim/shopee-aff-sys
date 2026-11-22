@@ -89,6 +89,7 @@ summary { font-weight: 600; }
 .sidebar nav { display: grid; gap: .25rem; }
 .sidebar nav a { padding: .7rem .8rem; border-radius: .5rem; text-decoration: none; }
 .sidebar nav a:hover, .sidebar nav a:focus-visible { background: #315543; }
+.sidebar nav a[aria-current="location"] { background: #315543; font-weight: 650; }
 .logout { margin-top: auto; align-self: flex-start; }
 .main { width: min(100%, 76rem); display: grid; align-content: start; gap: 1.05rem; padding: clamp(1rem, 4vw, 3.5rem); margin-inline: auto; }
 .workspace-header, .panel-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
@@ -163,3 +164,13 @@ dd { color: var(--green-dark); font-weight: 650; margin: 0; }
 @media (max-width: 700px) {
   .trend-row { grid-template-columns: minmax(0, 1fr); gap: .65rem; }
 }
+
+.offer-entry { margin-top: 1rem; max-width: 42rem; }
+.offer-check { display: flex; align-items: center; gap: .55rem; }
+.offer-check input { width: auto; }
+.offer-list { margin: 0; padding-inline-start: 1.75rem; }
+.offer-list li { padding: 1rem .35rem; border-top: 1px solid var(--line); }
+.offer-list h3 { overflow-wrap: anywhere; }
+.offer-metrics { display: flex; flex-wrap: wrap; gap: .7rem 1.8rem; margin: .8rem 0 0; }
+.offer-metrics dt { color: var(--muted); font-size: .85rem; }
+.offer-metrics dd { margin: .2rem 0 0; font-weight: 650; }

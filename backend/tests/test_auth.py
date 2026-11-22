@@ -181,3 +181,26 @@ def test_pipeline_scoping_and_idempotency(client: TestClient, tmp_path, monkeypa
     assert (
         client.post(route, headers=first, json={**payload, "caption": "Changed"}).status_code == 409
     )
+
+
+def test_shopee_offer_snapshots_are_validated_updated_and_workspace_scoped(client: TestClient):
+    token = register(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    workspace = client.get("/api/v1/workspaces", headers=headers).json()[0]["id"]
+    path = f"/api/v1/workspaces/{workspace}/shopee-offers"
+    offer = {
+        "offer_id": "43314705287", "name": "กล่องติดผนัง", "sold": 2000,
+        "sold_is_minimum": True, "price_satang": 6200, "commission_bps": 500,
+    }
+    assert client.post(path, headers=headers, json={"offers": [offer]}).json() == {"saved": 1}
+    assert client.post(path, headers=headers, json={
+        "offers": [offer, {**offer, "commission_bps": 625}],
+    }).json() == {"saved": 1}
+    invalid = client.post(path, headers=headers, json={"offers": [{**offer, "sold": -1}]})
+    assert invalid.status_code == 422
+    rows = client.get(path, headers=headers).json()
+    assert len(rows) == 1
+    assert rows[0]["commission_bps"] == 625 and rows[0]["sold_is_minimum"] is True
+    assert rows[0]["observed_at"].endswith("Z")
+    other_headers = {"Authorization": f"Bearer {register(client, 'other@example.com')}"}
+    assert client.get(path, headers=other_headers).status_code == 404

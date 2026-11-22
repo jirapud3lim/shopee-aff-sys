@@ -45,6 +45,12 @@ Use **จับคู่คำค้นเอง** to check a phrase against the
 
 **อันดับโอกาสสินค้า** lists the top five distinct products for the selected trends. If a product matches several visible trends, its highest-scoring match is shown. The 100-point score combines estimated search volume (25), keyword overlap and a phrase bonus (35), imported clicks (15), and imported unique orders (25). Volume components scale logarithmically and cap at 100,000 searches, 100 clicks and 20 orders. Report history covers the last 30 calendar days including today in Bangkok time. The score uses reports linked to one saved product by Sub ID and channel, and excludes cancelled or unpaid orders. Missing data contributes zero points and is labelled separately from a recorded zero. Manual search shows relevance only.
 
+## Shopee product discovery
+
+In Studio, open **สินค้าขายดีและค่าคอม**. It ranks the workspace's Shopee Affiliate offers using the sales count shown by Shopee and the displayed commission rate. The default filters are at least 100 units sold and 5% commission. The combined sort uses `log10(1 + displayed sales) × commission rate`. You can also sort by sales, commission rate, or estimated commission in THB per unit. A sales count with `+` is a lower bound. The amount in THB is an estimate based on the displayed price and rate.
+
+For refreshes, open [Shopee Affiliate Product Offers](https://affiliate.shopee.co.th/offer/product_offer) in Safari and search or pick a Shopee category. With Safari extension 0.2.0 and access granted to that page and local Studio, click **ดึงข้อเสนอจาก Safari**. It reads cards with all three values on the open results page. Studio updates matching offer IDs in the workspace. You can also enter details from an individual offer. Google Trends remains available from the ranking page.
+
 ## Connect a local Facebook Page
 
 Complete the [Meta OAuth spike](spikes/phase0_meta/README.md) for the Page and run the backend migrations. Set `META_TEST_PAGE_ID`, `META_STUDIO_WORKSPACE_ID` (from `GET /api/v1/workspaces` for the workspace owner), and optionally `META_STUDIO_PAGE_NAME` and `META_STUDIO_EXAMPLE_REEL_ID` in the root `.env`. With the same `DATABASE_URL` as the normal Studio, start the API using the saved encrypted Page token.
