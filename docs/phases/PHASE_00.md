@@ -1,6 +1,6 @@
 # PHASE_00 — Planning & API Feasibility
 
-> Status: NOT STARTED | Owner: unassigned | Last reviewed: 2026-11-22
+> Status: IN PROGRESS (docs done; live API proof blocked) | Owner: unassigned | Last reviewed: 2026-11-22
 > Parent plan: `../ROADMAP.md` | Source of truth for this phase: this file
 
 ## Scope and boundaries
@@ -29,18 +29,18 @@
 - [ ] Identify permitted sources of product images, music and marketing assets.
 
 ### Engineering tasks
-- [ ] Write PRD: target users, use cases, supported channels, in/out of scope.
-- [ ] Define personas and roles: owner, admin, member.
-- [ ] Map full journey: import → affiliate URL → video → campaign → publish → comment → verify.
-- [ ] Define business events, failure behavior and user-facing status model.
-- [ ] Create architecture diagram, initial ERD and initial API contracts.
+- [x] Write PRD: target users, use cases, supported channels, in/out of scope.
+- [x] Define personas and roles: owner, admin, member.
+- [x] Map full journey: import → affiliate URL → video → campaign → publish → comment → verify.
+- [x] Define business events, failure behavior and user-facing status model.
+- [x] Create architecture diagram, initial ERD and initial API contracts.
 - [ ] Prototype Meta OAuth and retrieve authorized Pages.
 - [ ] Test one real Page Reel publish through current official API.
 - [ ] Test posting and reading an affiliate-link comment (where permitted).
 - [ ] Test publishing idempotency/reconciliation behavior after ambiguous timeouts.
 - [ ] Verify product capture/import path and optional Shopee API eligibility.
-- [ ] Define video spec: MP4, H.264, 1080×1920, vertical 9:16, template durations 15/20/30 s.
-- [ ] Record dependencies, costs, blockers and alternatives in an API feasibility report.
+- [x] Define video spec: MP4, H.264, 1080×1920, vertical 9:16, template durations 15/20/30 s.
+- [x] Record dependencies, costs, blockers and alternatives in an API feasibility report.
 
 **Deliverables:** `docs/product/PRD.md`, `docs/architecture/SYSTEM.md`, `docs/architecture/ERD.md`, `docs/api/API_FEASIBILITY.md`, backlog, sitemap, wireframes.
 
@@ -48,13 +48,16 @@
 
 ## Verification and handoff
 
-- [ ] Run relevant formatting, linting, type checks, unit tests and integration tests (or record why unavailable).
-- [ ] Document commands and actual test output in `docs/agent/SESSION_HANDOFF.md`.
-- [ ] Record API constraints, failed approaches, permission requirements and assumptions.
+- [x] Run relevant formatting, linting, type checks, unit tests and integration tests (or record why unavailable).
+- [x] Document commands and actual test output in `docs/agent/SESSION_HANDOFF.md`.
+- [x] Record API constraints, failed approaches, permission requirements and assumptions.
 - [ ] Update this phase's checked tasks **only after evidence of completion**.
-- [ ] Capture architectural decisions as short ADRs under `docs/decisions/`.
-- [ ] Do not start implementation tasks in a later phase without an explicit decision.
+- [x] Capture architectural decisions as short ADRs under `docs/decisions/`.
+- [x] Do not start implementation tasks in a later phase without an explicit decision.
 
 ## Notes / decisions
 
-- Pending.
+- 2026-11-22: Docs drafted (PRD, SYSTEM, ERD, API_FEASIBILITY, ADR-0001..0005, `docs/backlog/PHASE_00_BACKLOG.md`).
+- Idempotency/reconcile behaviour proven **against a fake only** (`spikes/phase0_publish`, 14 tests pass); the live checkbox stays open.
+- Video spec defined (ADR-0005) but render NOT RUN: ffmpeg not installed (blocker B4).
+- Exit gate status: no live E2E proof; blockers B1–B7 + fallbacks documented in API_FEASIBILITY §5.

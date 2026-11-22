@@ -1,0 +1,9 @@
+# ADR-0003 — Reconcile before retry for publishing
+
+- Date: 2026-11-22
+- Status: Accepted
+- Context: Meta's Reel flow is multi-step (start → upload → finish → processing). A timeout after a request was sent leaves the remote state unknown; blind retry can post duplicate Reels. Meta documents a cap of 30 API-published posts / 24 h per Page, so duplicates also burn quota.
+- Decision: `video_publish_status`: queued → starting → uploading → finishing → processing → published | failed. Any ambiguous outcome (timeout, 5xx, network loss after send) → `unknown`, which leaves only through reconcile. Persist the remote `video_id` immediately after start. Reconcile: known id → GET status; unknown id → list recent Page reels in a window and match an idempotency marker in the description; none after a settle window → `failed_safe_to_retry`, which may requeue as a new attempt. Each external call is an immutable `publish_attempts` row. idempotency_key = sha256(org_id, campaign_item_id, page_id, video_asset_id), unique. `affiliate_comment_status` is independent, starts only after publish, and reconciles by reading Page-authored comments containing the URL/marker.
+- Alternatives considered: Retry with backoff always (duplicates); never retry (poor reliability); rely only on the provider idempotency (not documented by Meta for this endpoint — UNVERIFIED).
+- Consequences: Extra states and a reconcile worker; users see "Checking with Facebook…". Spike finding: the description (marker) is only sent at `finish`, so start-phase orphan sessions are invisible to list-by-marker; they are unpublished and harmless. Settle window needed because a delayed `finish` may still land.
+- Verification / revisit trigger: `spikes/phase0_publish` tests (mock only). Must be re-validated live: whether `video_reels` listing includes processing/unpublished reels, and delay between finish and listing.
