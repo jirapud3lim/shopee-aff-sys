@@ -30,6 +30,12 @@ name,source_url,affiliate_url,image_rights_note,affiliate_channel,affiliate_sub_
 
 PostgreSQL can be selected through `DATABASE_URL`. Run migrations before starting the API. The app saves local renders in `backend/.local/renders` or a directory set by `RENDER_ROOT`. The frontend proxies `/api/v1` to `http://127.0.0.1:8001` by default. Set `STUDIO_API_ORIGIN` before starting or building it to use a different API origin.
 
+## Import Shopee Affiliate reports
+
+Download the **Click Report** and **Order Report** from the Shopee Affiliate Portal. Open **ผลลัพธ์ Affiliate** in Studio and upload each CSV in its matching field. The click export needs Click ID and Click Time, and the order export needs Order ID and Order Time. Thai headers are supported. Keep any Channel, Referrer, Sub ID, item/model ID, order status, and commission columns from the export.
+
+Studio deduplicates clicks by Click ID and upserts order lines by Order ID and item identity. When an order export includes an update timestamp, older records are skipped. For exports without update timestamps, import older files before newer files. Studio counts each order once and counts an order-level commission once, even when Shopee repeats it across item rows. Order status and available commission columns determine estimated and confirmed totals. The report dates use Bangkok time. A matching Sub ID can identify the channel and link the report to the saved Studio product. This workflow uses only the imported CSV files.
+
 ## Connect a local Facebook Page
 
 Complete the [Meta OAuth spike](spikes/phase0_meta/README.md) for the Page and run the backend migrations. Set `META_TEST_PAGE_ID`, `META_STUDIO_WORKSPACE_ID` (from `GET /api/v1/workspaces` for the workspace owner), and optionally `META_STUDIO_PAGE_NAME` and `META_STUDIO_EXAMPLE_REEL_ID` in the root `.env`. With the same `DATABASE_URL` as the normal Studio, start the API using the saved encrypted Page token.

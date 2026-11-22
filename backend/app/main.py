@@ -4,6 +4,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.affiliate_reports import router as affiliate_reports_router
 from app.auth import current_user, hash_password, issue_session, token_digest, verify_password
 from app.db import get_db
 from app.meta_publishing import router as meta_publishing_router
@@ -20,7 +21,9 @@ app = FastAPI(
 )
 
 
-for feature_router in (products_router, renders_router, publishing_router, meta_publishing_router):
+for feature_router in (
+    products_router, renders_router, publishing_router, meta_publishing_router, affiliate_reports_router,
+):
     app.include_router(feature_router)
 
 

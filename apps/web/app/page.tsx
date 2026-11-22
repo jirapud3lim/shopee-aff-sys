@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import AffiliateResults from "./affiliate-results";
 import MetaPublishing from "./meta-publishing";
-import type { DemoProduct } from "./affiliate-demo";
 
 type Workspace = { id: string; name: string; role: string };
 type Product = {
@@ -62,7 +61,6 @@ async function api<T>(path: string, token: string, init?: RequestInit): Promise<
 }
 
 type ChannelLink = { channel: string; affiliate_url: string; sub_id: string | null };
-type SavedDemoProducts = Partial<Record<DemoProduct["id"], string>>;
 
 const channelLabels: Record<string, string> = {
   facebook: "Facebook", instagram: "Instagram", tiktok: "TikTok",
@@ -88,8 +86,6 @@ export default function Studio() {
   const [linkResult, setLinkResult] = useState<{ path: string; links: ChannelLink[] } | null>(null);
   const [linkChannel, setLinkChannel] = useState("facebook");
   const [anchor, setAnchor] = useState("");
-  const [demoDraft, setDemoDraft] = useState<DemoProduct | null>(null);
-  const [demoProductIds, setDemoProductIds] = useState<SavedDemoProducts>({});
   const videoUrl = useRef("");
   const product = products.find((item) => item.id === productId);
   const editingProduct = products.find((item) => item.id === editingId);
@@ -100,9 +96,6 @@ export default function Studio() {
   const activeLink = channelLinks.find((link) => link.channel === linkChannel);
   const facebookAffiliate = channelLinks.find((link) => link.channel === "facebook")?.affiliate_url;
   const showingResults = anchor === "affiliate-results";
-  const savedDemoProducts = Object.fromEntries(Object.entries(demoProductIds).filter(([, id]) => (
-    products.some((item) => item.id === id)
-  )));
 
   useEffect(() => {
     const syncAnchor = () => setAnchor(window.location.hash.slice(1));
@@ -200,14 +193,6 @@ export default function Studio() {
     setProducts([]);
     setProductId("");
     setEditingId("");
-    setDemoDraft(null);
-    let saved: SavedDemoProducts = {};
-    if (id) {
-      try {
-        saved = JSON.parse(window.localStorage.getItem(`affiliate-demo-products:${id}`) || "{}") ?? {};
-      } catch { /* The report still works when local storage is unavailable. */ }
-    }
-    setDemoProductIds(saved);
     setRenders([]);
     setRenderId("");
     setSimulation(null);
@@ -229,11 +214,8 @@ export default function Studio() {
     setSimulation(simulations.find((item) => item.render_id === id) ?? null);
   }
 
-  function openDemoProduct(sample: DemoProduct) {
-    const savedId = savedDemoProducts[sample.id];
-    if (savedId) selectProduct(savedId);
-    setEditingId("");
-    setDemoDraft(savedId ? null : sample);
+  function openReportProduct(id: string) {
+    selectProduct(id);
     window.location.hash = "products";
   }
 
@@ -298,17 +280,7 @@ export default function Studio() {
         ? items.map((item) => item.id === created.id ? created : item)
         : [created, ...items]);
       if (editingId) setEditingId("");
-      else {
-        selectProduct(created.id);
-        if (demoDraft) {
-          const saved = { ...demoProductIds, [demoDraft.id]: created.id };
-          setDemoProductIds(saved);
-          try {
-            window.localStorage.setItem(`affiliate-demo-products:${workspaceId}`, JSON.stringify(saved));
-          } catch { /* Keep the newly linked product available in this view. */ }
-          setDemoDraft(null);
-        }
-      }
+      else selectProduct(created.id);
       form.reset();
       setNotice({ text: editingId ? "บันทึกข้อมูลสินค้าแล้ว" : "เพิ่มสินค้าแล้ว", error: false });
     });
@@ -431,22 +403,21 @@ export default function Studio() {
         {!workspaceId && <section className="panel empty"><h2>เริ่มจากสร้างพื้นที่ทำงาน</h2><p>เพิ่มชื่อพื้นที่ทำงานเพื่อเริ่มจัดเก็บสินค้าและวิดีโอ</p></section>}
         {workspaceId && <>
           <div hidden={!showingResults}>
-            <AffiliateResults key={workspaceId} busy={!!busy} savedProducts={savedDemoProducts} onProduct={openDemoProduct} />
+            <AffiliateResults key={workspaceId} active={showingResults} busy={!!busy} scope={scope}
+              token={token} products={products} onProduct={openReportProduct} request={api} />
           </div>
           <div className="studio-view" hidden={showingResults}>
           <section className="panel" id="products">
             <div className="panel-head"><h2 tabIndex={-1}>คลังสินค้า</h2><span>{products.length} รายการ</span></div>
             <div className="columns">
-              <form key={editingId || demoDraft?.id || "new"} onSubmit={saveProduct}>
+              <form key={editingId || "new"} onSubmit={saveProduct}>
                 <h3>{editingId ? "แก้ไขสินค้า" : "เพิ่มสินค้า"}</h3>
-                {demoDraft && !editingId && <p className="muted">เตรียมชื่อจากสินค้าตัวอย่างแล้ว ใส่ลิงก์สินค้า Shopee ที่ต้องการใช้ก่อนบันทึก</p>}
-                <label>ชื่อสินค้า<input name="name" required maxLength={300} defaultValue={editingProduct?.name ?? demoDraft?.name} /></label>
+                <label>ชื่อสินค้า<input name="name" required maxLength={300} defaultValue={editingProduct?.name} /></label>
                 <label>ลิงก์สินค้า<input name="source_url" type="url" required maxLength={2083} defaultValue={editingProduct?.source_url} placeholder="https://" /></label>
                 <label>ลิงก์ Affiliate สำรอง<input name="affiliate_url" type="url" maxLength={2083} defaultValue={editingProduct?.affiliate_url ?? ""} placeholder="https://" /></label>
                 <label>สิทธิ์ใช้ภาพ<textarea name="image_rights_note" maxLength={2000} defaultValue={editingProduct?.image_rights_note ?? ""} rows={2} placeholder="เช่น ภาพถ่ายของร้านที่อนุญาตให้ใช้" /></label>
                 <button className="primary" disabled={!!busy}>{busy === "product" ? "กำลังบันทึก…" : editingId ? "บันทึกการแก้ไข" : "เพิ่มสินค้า"}</button>
                 {editingId && <button type="button" className="text-button" onClick={() => setEditingId("")} disabled={!!busy}>ยกเลิกการแก้ไข</button>}
-                {demoDraft && !editingId && <button type="button" className="text-button" onClick={() => setDemoDraft(null)} disabled={!!busy}>ล้างสินค้าตัวอย่าง</button>}
               </form>
               <div className="column">
                 <label>สินค้าที่จะใช้<select value={productId} onChange={(event) => selectProduct(event.target.value)} disabled={!!busy}>

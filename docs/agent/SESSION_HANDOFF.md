@@ -1,5 +1,12 @@
 # Session handoff
 
+## Shopee Affiliate CSV reporting (2026-11-22)
+
+- Studio imports Click Report and Order Report CSVs into the selected workspace. The report groups clicks, unique orders, and commission by channel and Sub ID. Imported Sub IDs can match saved Studio links.
+- Browser verification uploaded both fixtures into an isolated SQLite database. Import accepted 3 unique clicks from 4 rows and 5 order lines across 3 unique orders. The report showed ฿16.13 estimated and ฿6.00 confirmed. Filtering to Facebook and `fbcloth01-sale` showed ฿10.13 estimated and hid the TikTok row.
+- The backend regression test covered repeat imports, an order status update, an older export, repeated order-level commission, invalid CSV rows, and workspace isolation. The production build, SQLite migration, and Alembic schema check passed.
+- The connected Shopee account showed no rows for the checked periods and did not offer CSV downloads. The Studio workspace has no report rows. Shopee Open API remains paused.
+
 ## First live publication from Studio
 
 - Enabled live posting in the local Studio for the configured workspace owner and the Page คัดของเข้าบ้าน.
@@ -12,9 +19,9 @@
 - Added workspace-owner access for one configured Facebook Page, publication state per render, and Reel and comment read-back. The Studio can post a Facebook-channel Affiliate comment once Meta confirms publication. The existing simulation remains usable.
 - Verified the existing Magiclean Reel and its Affiliate comment from the Studio interface using Meta Graph API v27.0 with writes disabled. The Studio displayed the published status, Page author, Affiliate link and comment permalink.
 
-## Affiliate results preview (2026-11-22)
+## Earlier Affiliate results preview (2026-11-22)
 
-- Open **ผลลัพธ์ Affiliate** in the Studio menu. The workspace view uses 60 days of fixed demo data for clicks, orders and commissions. It supports date and channel filters, period comparisons, and performance by Sub ID. The two trends views use a fixed seven-day window with a Shopee ranking example and Studio order growth by product and channel.
+- The original **ผลลัพธ์ Affiliate** view used 60 days of fixed demo data for clicks, orders and commissions. It supported date and channel filters, period comparisons, and performance by Sub ID. The two trends views used a fixed seven-day window with a Shopee ranking example and Studio order growth by product and channel.
 - Adding a product from a card pre-fills its name in the existing product form. The user supplies the source URL. The browser keeps the sample-to-product association per workspace and uses it to reopen the saved product. Shopee reports and live rankings are pending the provider integration.
 - Safari verification on an isolated SQLite database covered opening the report, switching to 30 days, switching to Studio order growth, and saving and reopening a product through a trend card.
 - Browser verification on an isolated SQLite database also covered the Facebook channel filter, comparison toggle, valid and reversed custom date ranges, and reopening the saved trend product after reload. A second workspace showed its own product associations.
