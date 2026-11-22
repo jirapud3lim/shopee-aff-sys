@@ -19,11 +19,11 @@ from meta_oauth_spike.state import StateManager  # noqa: E402
 
 def main() -> int:
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
-    if cmd not in ("serve", "check", "studio"):
-        print("usage: run.py serve|check|studio [uvicorn options]")
+    if cmd not in ("serve", "check", "studio", "worker"):
+        print("usage: run.py serve|check|studio [uvicorn options]|worker [worker options]")
         return 2
     cfg = Config.from_env_file(HERE.parent.parent / ".env")
-    if cmd == "studio":
+    if cmd in ("studio", "worker"):
         root = HERE.parent.parent
         page_id = os.environ.get("META_TEST_PAGE_ID") or load_env(root / ".env").get("META_TEST_PAGE_ID")
         if not page_id:
@@ -35,6 +35,9 @@ def main() -> int:
             raise SystemExit("Run Meta OAuth for the configured Page first")
         python = root / "backend" / ".venv" / "bin" / "python"
         env = {**os.environ, "META_TEST_PAGE_ID": page_id, "META_PAGE_ACCESS_TOKEN": page["page_token"]}
+        if cmd == "worker":
+            os.chdir(root / "backend")
+            os.execve(python, [str(python), "-m", "app.campaign_worker", *sys.argv[2:]], env)
         os.chdir(root)
         os.execve(python, [str(python), "-m", "uvicorn", "--app-dir", "backend", "app.main:app",
                           "--host", "127.0.0.1", "--port", "8001", *sys.argv[2:]], env)

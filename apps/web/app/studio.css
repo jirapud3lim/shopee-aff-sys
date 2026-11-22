@@ -128,3 +128,17 @@ dd { color: var(--green-dark); font-weight: 650; margin: 0; }
 }
 
 .column .text-button, form .text-button { justify-self: start; }
+
+.campaign-item {
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  margin: .75rem 0;
+  padding: .85rem;
+  min-width: 0;
+}
+.campaign-item summary { cursor: pointer; font-weight: 700; }
+.campaign-item legend { padding: 0 .35rem; }
+.campaign-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .65rem; }
+.campaign-jobs { display: grid; gap: .75rem; padding-inline-start: 1.1rem; }
+.campaign-jobs p { margin: .3rem 0; overflow-wrap: anywhere; }
+.campaign-jobs a + a { margin-inline-start: .75rem; }

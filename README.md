@@ -46,6 +46,16 @@ uv run --with cryptography python spikes/phase0_meta/run.py studio
 
 Select **Facebook** in Studio and enter a Reel ID to read its publication status and the latest comments authored by the connected Page. Set `META_STUDIO_PUBLISH_ENABLED=true` and restart the API to make publishing available to the configured workspace owner. A completed render, a caption, and recorded image rights are required. Studio uses the Facebook channel's Affiliate URL for the optional comment, with the product's existing Affiliate URL as a fallback. After Meta confirms Reel publication, Studio posts the comment and polls for read-back. If processing outlasts polling or you close the page, load the same render and refresh its publication status to continue the pending comment. Each render can submit one live publication. Studio reconciles ambiguous responses by reading existing status.
 
+## Schedule publishing campaigns
+
+Open **แคมเปญ**, add completed renders, review each caption and Bangkok posting time, then save and activate the draft. The worker uses the same `DATABASE_URL` and `RENDER_ROOT` as the API. Run it from the repository root after applying migrations.
+
+```sh
+PYTHONPATH=backend backend/.venv/bin/python -m app.campaign_worker
+```
+
+Simulation is the default. Pause prevents new submissions, and cancel removes queued work from execution. The worker continues to check results for requests already submitted. Use `--once` to process at most one due job. Live campaigns require both `CAMPAIGN_LIVE_ENABLED=true` and `META_STUDIO_PUBLISH_ENABLED=true` on the API and worker, the configured Facebook Page, and explicit activation by the workspace owner. With the encrypted OAuth token, run the live-capable worker using `uv run --with cryptography python spikes/phase0_meta/run.py worker`. The queue spaces live Reel submissions at least 10 minutes apart.
+
 ## Check
 
 ```sh

@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     meta_studio_page_name: str = ""
     meta_studio_example_reel_id: str = ""
     meta_studio_publish_enabled: bool = False
+    campaign_live_enabled: bool = False
 
 
 @lru_cache

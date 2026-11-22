@@ -1,5 +1,12 @@
 # Session handoff
 
+## Local campaign queue (2026-11-22)
+
+- Phase 5 added campaign drafts, Bangkok scheduling, approval, pause, resume, cancellation, and job status in Studio. The separate worker persists jobs and its lease in the database. It reuses the existing Meta publication ledger when reading a requested post or comment.
+- An isolated SQLite load test reopened a database session for each worker tick. The persisted results were 500 completed jobs, 500 verified simulated comments, and 0 live publications. The next tick found no due work. Browser verification created a draft, activated it, paused it, resumed it, and showed one completed simulation after a separate worker process ran.
+- Backend and publish-spike tests passed (32). The web production build and the SQLite migration and Alembic schema check passed.
+- Live campaigns are off by default. No live post or comment was made in this phase. The single-Page connection, production Celery deployment, and multi-Page scheduling have separate acceptance work.
+
 ## Shopee Affiliate CSV reporting (2026-11-22)
 
 - Studio imports Click Report and Order Report CSVs into the selected workspace. The report groups clicks, unique orders, and commission by channel and Sub ID. Imported Sub IDs can match saved Studio links.

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import AffiliateResults from "./affiliate-results";
+import Campaigns from "./campaigns";
 import MetaPublishing from "./meta-publishing";
 
 type Workspace = { id: string; name: string; role: string };
@@ -33,6 +34,7 @@ const steps = [
   { anchor: "video", title: "วิดีโอ", detail: "เรนเดอร์และตรวจตัวอย่าง Reel" },
   { anchor: "simulation", title: "ทดสอบเผยแพร่", detail: "จำลองสถานะโพสต์และคอมเมนต์" },
   { anchor: "meta-publishing", title: "Facebook", detail: "โพสต์และอ่านกลับผ่าน Meta API" },
+  { anchor: "campaigns", title: "แคมเปญ", detail: "จัดคิวและติดตามงานเผยแพร่" },
 ];
 
 function headers(token: string, json = false) {
@@ -509,6 +511,11 @@ export default function Studio() {
           <MetaPublishing key={workspaceId} request={api} scope={scope} token={token}
             renderId={renderId} canPublishRender={render?.status === "completed" && !!video}
             productName={product?.name ?? ""} affiliateUrl={facebookAffiliate ?? product?.affiliate_url} />
+          <Campaigns key={workspaceId} scope={scope} token={token} active={anchor === "campaigns"}
+            canManage={workspaces.find((workspace) => workspace.id === workspaceId)?.role === "owner"}
+            renders={renders.filter((item) => item.status === "completed").map((item) => ({
+              id: item.id, name: products.find((candidate) => candidate.id === item.product_id)?.name ?? item.id,
+            }))} request={api} />
           </div>
         </>}
       </main>
