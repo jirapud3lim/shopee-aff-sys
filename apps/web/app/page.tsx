@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import AffiliateResults from "./affiliate-results";
+import MetaPublishing from "./meta-publishing";
 import type { DemoProduct } from "./affiliate-demo";
 
 type Workspace = { id: string; name: string; role: string };
@@ -32,6 +33,7 @@ const steps = [
   { anchor: "products", title: "สินค้า", detail: "ข้อมูลสินค้า ลิงก์ และสิทธิ์ใช้ภาพ" },
   { anchor: "video", title: "วิดีโอ", detail: "เรนเดอร์และตรวจตัวอย่าง Reel" },
   { anchor: "simulation", title: "ทดสอบเผยแพร่", detail: "จำลองสถานะโพสต์และคอมเมนต์" },
+  { anchor: "meta-publishing", title: "Facebook", detail: "โพสต์และอ่านกลับผ่าน Meta API" },
 ];
 
 function headers(token: string, json = false) {
@@ -526,6 +528,9 @@ export default function Studio() {
               </div>
             </div>
           </section>
+          <MetaPublishing key={workspaceId} request={api} scope={scope} token={token}
+            renderId={renderId} canPublishRender={render?.status === "completed" && !!video}
+            productName={product?.name ?? ""} affiliateUrl={facebookAffiliate ?? product?.affiliate_url} />
           </div>
         </>}
       </main>

@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,6 +21,15 @@ class Settings(BaseSettings):
 
     session_ttl_days: int = 30
     password_min_length: int = 12
+    meta_test_page_id: str = ""
+    meta_graph_api_version: str = "v27.0"
+    meta_page_access_token: SecretStr = SecretStr("")
+    meta_app_secret: SecretStr = SecretStr("")
+    meta_ca_file: str = ""
+    meta_studio_workspace_id: str = ""
+    meta_studio_page_name: str = ""
+    meta_studio_example_reel_id: str = ""
+    meta_studio_publish_enabled: bool = False
 
 
 @lru_cache

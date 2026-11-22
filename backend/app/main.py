@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import current_user, hash_password, issue_session, token_digest, verify_password
 from app.db import get_db
+from app.meta_publishing import router as meta_publishing_router
 from app.models import Organization, OrganizationMember, SessionToken, User
 from app.products import router as products_router
 from app.publishing import router as publishing_router
@@ -19,7 +20,7 @@ app = FastAPI(
 )
 
 
-for feature_router in (products_router, renders_router, publishing_router):
+for feature_router in (products_router, renders_router, publishing_router, meta_publishing_router):
     app.include_router(feature_router)
 
 

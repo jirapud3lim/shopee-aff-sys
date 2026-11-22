@@ -1,10 +1,23 @@
 # Session handoff
 
+## First live publication from Studio
+
+- Enabled live posting in the local Studio for the configured workspace owner and the Page คัดของเข้าบ้าน.
+- Created a Shopee Affiliate link for Scotch-Brite kitchen microfiber cloths (pack of two) with Facebook Sub ID `fbcloth01`. Studio rendered one 15-second Reel from three original graphics.
+- The Studio interface submitted one public Reel and one Affiliate comment, then showed `published` and verified the Page-authored comment and Affiliate URL from Meta Graph API. The backend retained the publication and comment IDs. [Reel](https://www.facebook.com/reel/1974853066822019/) · [Verified comment](https://www.facebook.com/reel/1974853066822019/?comment_id=1793026762213749)
+- Meta Graph API v27.0 returned Reel ID `1974853066822019` with `publish_status=published`. The comment creation response returned `1974853066822019_1793026762213749`; listing Reel comments returned `122097553173560732_1793026762213749` with the expected Page author, Affiliate URL and disclosure. Studio recorded `comment_verified=true`.
+
+## Studio Meta connection
+
+- Added workspace-owner access for one configured Facebook Page, publication state per render, and Reel and comment read-back. The Studio can post a Facebook-channel Affiliate comment once Meta confirms publication. The existing simulation remains usable.
+- Verified the existing Magiclean Reel and its Affiliate comment from the Studio interface using Meta Graph API v27.0 with writes disabled. The Studio displayed the published status, Page author, Affiliate link and comment permalink.
+
 ## First live Reel test (2026-11-22)
 
 - Published one 15-second Magiclean test Reel using the Meta Graph API on คัดของเข้าบ้าน. The API reported `publish_status=published` and the user confirmed the Reel was visible. [Published Reel](https://www.facebook.com/reel/1474154981527533/)
-- The test ran outside Studio. Live comment posting and read-back remain unverified. The local Studio still simulates Meta publication.
+- The original Magiclean publication and comment tests ran through direct Graph API calls before the Studio connection was implemented.
 - The test caption and channel link are recorded in `drafts/fbkitchen01/`. The rendered previews and source photos are kept locally.
+- Posted one Affiliate comment via Graph API v27.0 at `POST /1474154981527533/comments`. A direct GET by the returned comment ID and `GET /1474154981527533/comments` both confirmed the same author, message, and permalink. Meta returned `1474154981527533_1139470178465538` on creation and `122097541725560732_1139470178465538` when listing the Reel comments. The IDs share a comment suffix, while the prefixes are the video ID and post ID respectively. [Verified comment](https://www.facebook.com/reel/1474154981527533/?comment_id=1139470178465538)
 
 ## Phase verification follow-up
 
@@ -52,4 +65,4 @@
 - Open product assumptions to confirm with user: A1 Thailand market, A2 English UI first (Thai later), role matrix.
 
 ## Next action
-Verify live comment read-back when a test comment is authorized.
+Live Studio publication and comment read-back passed in the configured local workspace.
