@@ -142,3 +142,16 @@ dd { color: var(--green-dark); font-weight: 650; margin: 0; }
 .campaign-jobs { display: grid; gap: .75rem; padding-inline-start: 1.1rem; }
 .campaign-jobs p { margin: .3rem 0; overflow-wrap: anywhere; }
 .campaign-jobs a + a { margin-inline-start: .75rem; }
+
+.trend-explorer { display: grid; gap: 1.25rem; scroll-margin-top: 1rem; }
+.trend-explorer h1 { font-size: clamp(2rem, 4vw, 3.35rem); }
+.trend-filters { display: flex; flex-wrap: wrap; align-items: end; gap: .7rem 1rem; }
+.trend-filters label { margin: 0; }
+.trend-list, .trend-matches { list-style: none; margin: 0; padding: 0; }
+.trend-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; padding: 1rem 0; border-top: 1px solid var(--line); }
+.trend-row h3, .trend-matches p { overflow-wrap: anywhere; }
+.trend-matches { display: grid; gap: .55rem; }
+.trend-matches button { text-align: start; }
+@media (max-width: 700px) {
+  .trend-row { grid-template-columns: minmax(0, 1fr); gap: .65rem; }
+}

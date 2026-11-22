@@ -1,6 +1,6 @@
 # PHASE_07 — Google Trends, Gemini & Veo
 
-> Status: NOT STARTED | Owner: unassigned | Last reviewed: 2026-11-22
+> Status: IN PROGRESS | Last reviewed: 2026-11-22
 > Parent plan: `../ROADMAP.md` | Source of truth for this phase: this file
 
 ## Scope and boundaries
@@ -27,12 +27,13 @@
 - [ ] Define approval and cost caps before running bulk generative jobs.
 
 ### Trends/product discovery
-- [ ] Determine compliant Trends ingestion (official integrations or appropriately permitted exports/feeds; validate availability).
-- [ ] Build Trend Explorer for Thai location, category, timeframe and keywords.
-- [ ] Normalize keywords and match them with imported Shopee products.
+- [x] Validate ingestion from the official Google Trending Now Thailand RSS.
+- [x] Build Trend Explorer for Thailand with 4- and 24-hour windows and keyword filters.
+- [ ] Add category filtering when source category data is available.
+- [x] Normalize Thai and Latin keywords and match them with saved Shopee products in the current workspace.
 - [ ] Build explainable opportunity score combining trend signal, product relevance and trusted product metrics.
-- [ ] Display source timestamp, freshness and limitations.
-- [ ] Offer manual curation to avoid irrelevant or misleading matches.
+- [x] Display source timestamp, freshness and approximate search volume.
+- [x] Offer manual keyword lookup and let operators open a suggested product for review.
 
 ### AI content pipeline
 - [ ] Implement optional Gemini text provider for captions/scripts/storyboards/prompts.
@@ -57,4 +58,6 @@
 
 ## Notes / decisions
 
-- Pending.
+- This slice uses the official Trending Now RSS for Thailand. The feed does not include categories. Matches use shared words in the local Shopee catalog and expose the matching terms.
+- See [ADR-0006](../decisions/ADR-0006-thai-trend-discovery.md) for the feed and matching decisions.
+- Gemini, Veo, and Shopee Open API are deferred. See the session handoff for verification of the Google Trends slice.

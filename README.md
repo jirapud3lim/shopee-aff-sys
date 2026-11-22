@@ -10,6 +10,7 @@ Install Python 3.11+, [uv](https://docs.astral.sh/uv/), Node.js 20.9+, and FFmpe
 uv sync --project backend --extra test
 npm ci --prefix apps/web
 export DATABASE_URL="sqlite:///$PWD/backend/local.db"
+export PYTHAINLP_READ_ONLY=1 PYTHAINLP_OFFLINE=1
 uv run --project backend alembic -c backend/alembic.ini upgrade head
 uv run --project backend uvicorn --app-dir backend app.main:app --host 127.0.0.1 --port 8001
 ```
@@ -35,6 +36,12 @@ PostgreSQL can be selected through `DATABASE_URL`. Run migrations before startin
 Download the **Click Report** and **Order Report** from the Shopee Affiliate Portal. Open **ผลลัพธ์ Affiliate** in Studio and upload each CSV in its matching field. The click export needs Click ID and Click Time, and the order export needs Order ID and Order Time. Thai headers are supported. Keep any Channel, Referrer, Sub ID, item/model ID, order status, and commission columns from the export.
 
 Studio deduplicates clicks by Click ID and upserts order lines by Order ID and item identity. When an order export includes an update timestamp, older records are skipped. For exports without update timestamps, import older files before newer files. Studio counts each order once and counts an order-level commission once, even when Shopee repeats it across item rows. Order status and available commission columns determine estimated and confirmed totals. The report dates use Bangkok time. A matching Sub ID can identify the channel and link the report to the saved Studio product. This workflow uses only the imported CSV files.
+
+## Find Thai trends
+
+Open **Google Trends** in Studio. Browse Thailand’s Trending Now RSS for the last 4 or 24 hours, filter by keyword, or show only trends with a product match. Studio highlights the matching words in saved Shopee product names from the current workspace. Select a match to open its inventory record.
+
+Use **จับคู่คำค้นเอง** to check a phrase against the inventory and open it in Google Trends Explore. The Trending Now feed provides approximate search volumes and does not include a category field. The API caches the feed for 10 minutes and labels cached results when a refresh fails. The manual lookup uses the bundled Thai dictionary and works independently of the feed.
 
 ## Connect a local Facebook Page
 

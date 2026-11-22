@@ -1,5 +1,13 @@
 # Session handoff
 
+## Phase 7 Google Trends (2026-11-22)
+
+- Studio reads Thailand's official Google Trending Now RSS and shows 4- and 24-hour windows, freshness, approximate searches and Google Explore links. It matches Thai and Latin tokens against saved Shopee product names within the selected workspace. Manual keyword matching works independently of the feed.
+- At 17:28 Bangkok time the live Studio API returned 10 Thai trends for 24 hours and 3 for 4 hours. The workspace had one Shopee product and no automatic match to that live snapshot. Searching `ผ้าไมโครไฟเบอร์` returned the saved Scotch-Brite cloth with the terms `ผ้า`, `ไมโคร` and `ไฟเบอร์`. An unrelated football query returned no matches.
+- Chromium verified the live feed, time and keyword filters, the matching-only filter, and opening a saved product from manual search. `PYTHAINLP_READ_ONLY=1 PYTHAINLP_OFFLINE=1 backend/.venv/bin/python -m pytest backend/tests spikes/phase0_publish/tests -q` passed 34 tests with FFmpeg on PATH. The production web build and Alembic schema check passed.
+- A controlled RSS fixture verified automatic matching to a relevant product, workspace isolation, and exclusion of products from other domains. A cache test verified the fallback during a feed outage.
+- The feed has no category field. The production opportunity score and AI pipeline remain pending. Gemini, Veo and Shopee Open API remain deferred.
+
 ## Phase 6 staging operations (2026-11-22)
 
 - Started the isolated Compose stack on Docker Desktop. PostgreSQL 17, the API, the web proxy, the campaign worker, and Prometheus were reachable. Existing Studio data and the staging secret were kept separate.

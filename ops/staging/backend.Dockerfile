@@ -1,7 +1,8 @@
 FROM ghcr.io/astral-sh/uv:0.11.13 AS uv
 FROM python:3.12-slim-bookworm
 
-ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 UV_PROJECT_ENVIRONMENT=/opt/venv
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 UV_PROJECT_ENVIRONMENT=/opt/venv \
+    PYTHAINLP_READ_ONLY=1 PYTHAINLP_OFFLINE=1
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg gosu \
     && rm -rf /var/lib/apt/lists/* \

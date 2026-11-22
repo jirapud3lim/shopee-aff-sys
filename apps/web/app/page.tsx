@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import AffiliateResults from "./affiliate-results";
 import Campaigns from "./campaigns";
 import MetaPublishing from "./meta-publishing";
+import TrendExplorer from "./trend-explorer";
 
 type Workspace = { id: string; name: string; role: string };
 type Product = {
@@ -98,6 +99,8 @@ export default function Studio() {
   const activeLink = channelLinks.find((link) => link.channel === linkChannel);
   const facebookAffiliate = channelLinks.find((link) => link.channel === "facebook")?.affiliate_url;
   const showingResults = anchor === "affiliate-results";
+  const showingTrends = anchor === "trends";
+  const showingWorkspace = !showingResults && !showingTrends;
 
   useEffect(() => {
     const syncAnchor = () => setAnchor(window.location.hash.slice(1));
@@ -110,7 +113,7 @@ export default function Studio() {
     if (!workspaceId) return;
     const target = document.getElementById(anchor);
     target?.scrollIntoView();
-    if (anchor === "affiliate-results") target?.querySelector("h1")?.focus({ preventScroll: true });
+    if (anchor === "affiliate-results" || anchor === "trends") target?.querySelector("h1")?.focus({ preventScroll: true });
     if (anchor === "products") target?.querySelector("h2")?.focus({ preventScroll: true });
   }, [anchor, workspaceId]);
 
@@ -396,11 +399,12 @@ export default function Studio() {
         {workspaceId && <nav aria-label="เมนู Studio">
           {steps.map((step) => <a href={`#${step.anchor}`} key={step.anchor}>{step.title}</a>)}
           <a href="#affiliate-results" aria-current={showingResults ? "location" : undefined}>ผลลัพธ์ Affiliate</a>
+          <a href="#trends" aria-current={showingTrends ? "location" : undefined}>Google Trends</a>
         </nav>}
         <button type="button" className="text-button logout" onClick={logout} disabled={!!busy}>ออกจากระบบ</button>
       </aside>
       <main className="main">
-        {(!workspaceId || !showingResults) && <header className="workspace-header"><h1>สตูดิโอ Reel</h1><span className="mode-tag">โหมดทดสอบ</span></header>}
+        {(!workspaceId || showingWorkspace) && <header className="workspace-header"><h1>สตูดิโอ Reel</h1><span className="mode-tag">โหมดทดสอบ</span></header>}
         <div aria-live="polite">{status}</div>
         {!workspaceId && <section className="panel empty"><h2>เริ่มจากสร้างพื้นที่ทำงาน</h2><p>เพิ่มชื่อพื้นที่ทำงานเพื่อเริ่มจัดเก็บสินค้าและวิดีโอ</p></section>}
         {workspaceId && <>
@@ -408,7 +412,11 @@ export default function Studio() {
             <AffiliateResults key={workspaceId} active={showingResults} busy={!!busy} scope={scope}
               token={token} products={products} onProduct={openReportProduct} request={api} />
           </div>
-          <div className="studio-view" hidden={showingResults}>
+          <div hidden={!showingTrends}>
+            <TrendExplorer key={workspaceId} active={showingTrends} scope={scope} token={token}
+              busy={!!busy} onProduct={openReportProduct} request={api} />
+          </div>
+          <div className="studio-view" hidden={!showingWorkspace}>
           <section className="panel" id="products">
             <div className="panel-head"><h2 tabIndex={-1}>คลังสินค้า</h2><span>{products.length} รายการ</span></div>
             <div className="columns">

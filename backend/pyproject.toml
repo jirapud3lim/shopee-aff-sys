@@ -14,6 +14,7 @@ dependencies = [
   "publish-spike>=0.1.0",
   "python-multipart>=0.0.9,<1",
   "Pillow>=10,<13",
+  "pythainlp>=5.3,<6",
 ]
 
 [tool.uv.sources]
