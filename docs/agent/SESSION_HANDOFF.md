@@ -12,6 +12,16 @@
 - Added workspace-owner access for one configured Facebook Page, publication state per render, and Reel and comment read-back. The Studio can post a Facebook-channel Affiliate comment once Meta confirms publication. The existing simulation remains usable.
 - Verified the existing Magiclean Reel and its Affiliate comment from the Studio interface using Meta Graph API v27.0 with writes disabled. The Studio displayed the published status, Page author, Affiliate link and comment permalink.
 
+## Affiliate results preview (2026-11-22)
+
+- Open **ผลลัพธ์ Affiliate** in the Studio menu. The workspace view uses 60 days of fixed demo data for clicks, orders and commissions. It supports date and channel filters, period comparisons, and performance by Sub ID. The two trends views use a fixed seven-day window with a Shopee ranking example and Studio order growth by product and channel.
+- Adding a product from a card pre-fills its name in the existing product form. The user supplies the source URL. The browser keeps the sample-to-product association per workspace and uses it to reopen the saved product. Shopee reports and live rankings are pending the provider integration.
+- Safari verification on an isolated SQLite database covered opening the report, switching to 30 days, switching to Studio order growth, and saving and reopening a product through a trend card.
+- Browser verification on an isolated SQLite database also covered the Facebook channel filter, comparison toggle, valid and reversed custom date ranges, and reopening the saved trend product after reload. A second workspace showed its own product associations.
+- ImageGen produced the three sample product photos in `apps/web/public/affiliate-demo/` using the built-in tool with this prompt.
+
+  > Product mockup for a Thai affiliate dashboard. A single wide horizontal catalog contact sheet with exactly three equally sized side-by-side scenes, no gutters, each object centered in its own third with ample margin. Left: ivory compact portable handheld fan upright on light mint sage backdrop. Middle: dusty blue 750ml stainless steel insulated tumbler with handle and lid on soft powder blue backdrop. Right: cream modular drawer organizer tray containing two small neatly folded cloths on warm pale peach backdrop. Refined photographic ecommerce thumbnails with soft daylight, subtle shadows and believable materials, three isolated products, shot from eye-level slight three-quarter angle. No text, logos, hands, or watermark.
+
 ## First live Reel test (2026-11-22)
 
 - Published one 15-second Magiclean test Reel using the Meta Graph API on คัดของเข้าบ้าน. The API reported `publish_status=published` and the user confirmed the Reel was visible. [Published Reel](https://www.facebook.com/reel/1474154981527533/)

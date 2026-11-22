@@ -7,6 +7,7 @@
   display: grid;
   gap: 1.25rem;
   min-width: 0;
+  scroll-margin-top: 1rem;
 }
 .affiliate-results h1 { font-size: clamp(2rem, 4vw, 3.35rem); letter-spacing: -.04em; }
 .affiliate-results h2 { font-size: clamp(1.15rem, 2.2vw, 1.5rem); }
@@ -70,7 +71,7 @@
 .affiliate-trend-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
 .affiliate-trend-card { border: 1px solid var(--line); border-radius: .75rem; overflow: hidden; }
 .affiliate-product-photo {
-  aspect-ratio: 1.35;
+  aspect-ratio: 1.16;
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;

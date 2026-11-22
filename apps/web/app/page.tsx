@@ -89,7 +89,7 @@ export default function Studio() {
   const [linkChannel, setLinkChannel] = useState("facebook");
   const [anchor, setAnchor] = useState("");
   const [demoDraft, setDemoDraft] = useState<DemoProduct | null>(null);
-  const [demoProductIds, setDemoProductIds] = useState<Record<string, SavedDemoProducts>>({});
+  const [demoProductIds, setDemoProductIds] = useState<SavedDemoProducts>({});
   const videoUrl = useRef("");
   const product = products.find((item) => item.id === productId);
   const editingProduct = products.find((item) => item.id === editingId);
@@ -100,10 +100,9 @@ export default function Studio() {
   const activeLink = channelLinks.find((link) => link.channel === linkChannel);
   const facebookAffiliate = channelLinks.find((link) => link.channel === "facebook")?.affiliate_url;
   const showingResults = anchor === "affiliate-results";
-  const savedDemoProducts: SavedDemoProducts = {};
-  for (const [demoId, id] of Object.entries(demoProductIds[workspaceId] ?? {})) {
-    if (products.some((item) => item.id === id)) savedDemoProducts[demoId as DemoProduct["id"]] = id;
-  }
+  const savedDemoProducts = Object.fromEntries(Object.entries(demoProductIds).filter(([, id]) => (
+    products.some((item) => item.id === id)
+  )));
 
   useEffect(() => {
     const syncAnchor = () => setAnchor(window.location.hash.slice(1));
@@ -117,6 +116,7 @@ export default function Studio() {
     const target = document.getElementById(anchor);
     target?.scrollIntoView();
     if (anchor === "affiliate-results") target?.querySelector("h1")?.focus({ preventScroll: true });
+    if (anchor === "products") target?.querySelector("h2")?.focus({ preventScroll: true });
   }, [anchor, workspaceId]);
 
   useEffect(() => {
@@ -201,6 +201,13 @@ export default function Studio() {
     setProductId("");
     setEditingId("");
     setDemoDraft(null);
+    let saved: SavedDemoProducts = {};
+    if (id) {
+      try {
+        saved = JSON.parse(window.localStorage.getItem(`affiliate-demo-products:${id}`) || "{}") ?? {};
+      } catch { /* The report still works when local storage is unavailable. */ }
+    }
+    setDemoProductIds(saved);
     setRenders([]);
     setRenderId("");
     setSimulation(null);
@@ -294,10 +301,11 @@ export default function Studio() {
       else {
         selectProduct(created.id);
         if (demoDraft) {
-          setDemoProductIds((previous) => ({
-            ...previous,
-            [workspaceId]: { ...previous[workspaceId], [demoDraft.id]: created.id },
-          }));
+          const saved = { ...demoProductIds, [demoDraft.id]: created.id };
+          setDemoProductIds(saved);
+          try {
+            window.localStorage.setItem(`affiliate-demo-products:${workspaceId}`, JSON.stringify(saved));
+          } catch { /* Keep the newly linked product available in this view. */ }
           setDemoDraft(null);
         }
       }
@@ -356,7 +364,6 @@ export default function Studio() {
       await api("/auth/logout", token, { method: "POST" });
       selectWorkspace("");
       setWorkspaces([]);
-      setDemoProductIds({});
       setToken("");
     });
   }
@@ -428,7 +435,7 @@ export default function Studio() {
           </div>
           <div className="studio-view" hidden={showingResults}>
           <section className="panel" id="products">
-            <div className="panel-head"><h2>คลังสินค้า</h2><span>{products.length} รายการ</span></div>
+            <div className="panel-head"><h2 tabIndex={-1}>คลังสินค้า</h2><span>{products.length} รายการ</span></div>
             <div className="columns">
               <form key={editingId || demoDraft?.id || "new"} onSubmit={saveProduct}>
                 <h3>{editingId ? "แก้ไขสินค้า" : "เพิ่มสินค้า"}</h3>
