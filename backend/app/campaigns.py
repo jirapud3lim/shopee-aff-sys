@@ -73,6 +73,7 @@ class CampaignWorkerState(Base):
     lease_token: Mapped[str | None] = mapped_column(String(36))
     lease_until: Mapped[int] = mapped_column(BigInteger)
     next_live_dispatch_at: Mapped[int] = mapped_column(BigInteger)
+    heartbeat_at: Mapped[int | None] = mapped_column(BigInteger)
 
 
 class ItemInput(PublishInput):

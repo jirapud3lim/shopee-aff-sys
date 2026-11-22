@@ -1,6 +1,6 @@
 # PHASE_06 — Billing & Production Readiness
 
-> Status: NOT STARTED | Owner: unassigned | Last reviewed: 2026-11-22
+> Status: IN PROGRESS (local staging operations verified) | Owner: unassigned | Last reviewed: 2026-11-22
 > Parent plan: `../ROADMAP.md` | Source of truth for this phase: this file
 
 ## Scope and boundaries
@@ -55,4 +55,6 @@
 
 ## Notes / decisions
 
-- Pending.
+- Local staging runs PostgreSQL 17, the Studio web and API, a separate database-backed worker, and Prometheus. The worker processed a simulated campaign end to end. The web API rejected both live publish and live campaign creation.
+- A PostgreSQL dump and render archive were restored into scratch destinations. Checksums, restored row counts, media presence, and a recent-backup metric passed. Prometheus rules were validated, including a stale worker heartbeat test.
+- The staging smoke and restore checks are configured in GitHub Actions. Hosted deployment, off-host retention and scheduling, external alert routing, and the billing work remain pending. See `../ops/STAGING.md`.

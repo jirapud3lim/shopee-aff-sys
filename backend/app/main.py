@@ -10,6 +10,7 @@ from app.campaigns import router as campaigns_router
 from app.db import get_db
 from app.meta_publishing import router as meta_publishing_router
 from app.models import Organization, OrganizationMember, SessionToken, User
+from app.operations import router as operations_router
 from app.products import router as products_router
 from app.publishing import router as publishing_router
 from app.renders import router as renders_router
@@ -24,7 +25,7 @@ app = FastAPI(
 
 for feature_router in (
     products_router, renders_router, publishing_router, meta_publishing_router,
-    affiliate_reports_router, campaigns_router,
+    affiliate_reports_router, campaigns_router, operations_router,
 ):
     app.include_router(feature_router)
 

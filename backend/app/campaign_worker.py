@@ -38,6 +38,14 @@ def release(db, token):
     db.commit()
 
 
+def heartbeat(db, now):
+    db.execute(update(CampaignWorkerState).where(
+        CampaignWorkerState.id == 1,
+        or_(CampaignWorkerState.heartbeat_at.is_(None), CampaignWorkerState.heartbeat_at <= now - 5),
+    ).values(heartbeat_at=now))
+    db.commit()
+
+
 def claim(db, now, live_enabled):
     worker = db.get(CampaignWorkerState, 1)
     row = db.execute(select(CampaignItem, Campaign).join(
@@ -207,6 +215,7 @@ def main():
         try:
             with SessionLocal() as db:
                 worked = tick(db, settings)
+                heartbeat(db, int(time()))
         except Exception:
             logger.exception("Campaign worker iteration failed")
             if options.once:

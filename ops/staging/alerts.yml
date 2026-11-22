@@ -1,0 +1,33 @@
+groups:
+  - name: studio
+    rules:
+      - alert: StudioAPIUnavailable
+        expr: up{job="studio"} == 0
+        for: 1m
+        annotations:
+          summary: Studio metrics cannot be scraped
+      - alert: StudioWorkerHeartbeatStale
+        expr: time() - studio_worker_heartbeat_timestamp_seconds > 60
+        for: 1m
+        annotations:
+          summary: No successful worker poll in over a minute
+      - alert: StudioCampaignQueueOverdue
+        expr: studio_campaign_oldest_due_seconds > 300
+        for: 2m
+        annotations:
+          summary: A simulation job is more than five minutes overdue
+      - alert: StudioCampaignNeedsAttention
+        expr: studio_campaign_jobs{state="needs_attention"} > 0
+        for: 1m
+        annotations:
+          summary: A campaign job requires review
+      - alert: StudioRenderStorageLow
+        expr: studio_render_storage_free_bytes < 1073741824
+        for: 5m
+        annotations:
+          summary: Less than 1 GiB is free on render storage
+      - alert: StudioBackupOverdue
+        expr: time() - studio_last_backup_timestamp_seconds > 108000
+        for: 5m
+        annotations:
+          summary: No successful backup in the last 30 hours

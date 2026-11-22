@@ -27,3 +27,25 @@ jobs:
       - run: uv run --project backend --extra test pytest backend/tests -q
       - run: npm ci --prefix apps/web
       - run: npm run build --prefix apps/web
+
+  staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      COMPOSE_PROJECT_NAME: affiliate-staging-ci
+    steps:
+      - uses: actions/checkout@v4
+      - run: (umask 077 && openssl rand -hex 32 > .env.staging-db-password)
+      - run: docker compose -f compose.staging.yml up --build -d --wait --wait-timeout 180
+      - run: python3 ops/staging/smoke.py
+      - name: Verify backup, restore and monitoring
+        run: |
+          backup_id=$(bash ops/staging/backup.sh)
+          docker compose -f compose.staging.yml run --rm -T backup restore-check "$backup_id"
+          python3 ops/staging/smoke.py --backup-metric
+          docker compose -f compose.staging.yml exec -T prometheus /bin/promtool check config /etc/prometheus/prometheus.yml
+          docker run --rm -v "$PWD/ops/staging:/rules:ro" -w /rules --entrypoint /bin/promtool prom/prometheus:v3.5.0 test rules alerts.test.yml
+      - if: failure()
+        run: docker compose -f compose.staging.yml logs --tail=100
+      - if: always()
+        run: docker compose -f compose.staging.yml down -v

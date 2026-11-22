@@ -1,5 +1,13 @@
 # Session handoff
 
+## Phase 6 staging operations (2026-11-22)
+
+- Started the isolated Compose stack on Docker Desktop. PostgreSQL 17, the API, the web proxy, the campaign worker, and Prometheus were reachable. Existing Studio data and the staging secret were kept separate.
+- The staging smoke test rendered an MP4, completed one simulated campaign, verified its simulated Affiliate comment, and received HTTP 403 for both live publish and live campaign creation. Prometheus reported a fresh worker heartbeat.
+- Backup `20261122T101418201265971Z` passed the SHA-256 and isolated restore checks. The restored PostgreSQL database held one workspace, one render, and one campaign item. The completed MP4 was present. A restricted copy of the backup was exported under `backend/.local/staging-backups/`.
+- Prometheus validated six rules and passed the stale-heartbeat test. It reported the backup timestamp after the API and worker restarted. The backend and publish-spike test suite passed 32 tests. The GitHub staging job was added and its checks were exercised locally.
+- Billing and live staging writes remain off. Hosted deployment, automatic off-host backups, and external alert routing remain pending. See `docs/ops/STAGING.md`.
+
 ## Local campaign queue (2026-11-22)
 
 - Phase 5 added campaign drafts, Bangkok scheduling, approval, pause, resume, cancellation, and job status in Studio. The separate worker persists jobs and its lease in the database. It reuses the existing Meta publication ledger when reading a requested post or comment.

@@ -64,3 +64,5 @@ npm run build --prefix apps/web
 ```
 
 [API docs](http://127.0.0.1:8001/api/v1/docs) are available while the API runs. The simulation uses a local Meta test double and reconciles a simulated timeout before recording the result. Rendering runs on the local API process. Production workers and App Review remain outside this slice.
+
+For the isolated PostgreSQL staging stack, see [Staging operations](docs/ops/STAGING.md).

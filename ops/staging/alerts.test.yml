@@ -1,0 +1,19 @@
+rule_files:
+  - alerts.yml
+evaluation_interval: 15s
+tests:
+  - interval: 15s
+    input_series:
+      - series: 'studio_worker_heartbeat_timestamp_seconds{job="studio"}'
+        values: '0+0x12'
+    alert_rule_test:
+      - eval_time: 30s
+        alertname: StudioWorkerHeartbeatStale
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: StudioWorkerHeartbeatStale
+        exp_alerts:
+          - exp_labels:
+              job: studio
+            exp_annotations:
+              summary: No successful worker poll in over a minute
