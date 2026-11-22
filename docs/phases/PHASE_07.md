@@ -31,7 +31,7 @@
 - [x] Build Trend Explorer for Thailand with 4- and 24-hour windows and keyword filters.
 - [ ] Add category filtering when source category data is available.
 - [x] Normalize Thai and Latin keywords and match them with saved Shopee products in the current workspace.
-- [ ] Build explainable opportunity score combining trend signal, product relevance and trusted product metrics.
+- [x] Rank products by trend volume, keyword relevance, and the last 30 Bangkok calendar days of attributable clicks and unique orders from Shopee CSVs. Show the component scores and underlying data.
 - [x] Display source timestamp, freshness and approximate search volume.
 - [x] Offer manual keyword lookup and let operators open a suggested product for review.
 

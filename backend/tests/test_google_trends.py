@@ -9,10 +9,12 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app import google_trends
+from app.affiliate_reports import router as reports_router
 from app.auth import WorkspaceContext, require_workspace
 from app.db import Base, get_db
 from app.models import Organization
-from app.products import Product
+from app.products import ChannelLink, Product
+from app.shopee_report_csv import BANGKOK
 
 
 def test_feed_age_and_thai_matches_are_workspace_scoped(monkeypatch):
@@ -72,6 +74,10 @@ def test_feed_age_and_thai_matches_are_workspace_scoped(monkeypatch):
         result, = trend["matches"]
         assert result["product_id"] == "cloth-a"
         assert result["terms"] and result["phrase"]
+        assert result["opportunity"] == {
+            "total": 47, "points": {"trend": 12, "relevance": 35, "clicks": 0, "orders": 0},
+            "clicks": None, "orders": None, "searches": 200,
+        }
         assert trend["explore_url"].startswith("https://trends.google.com/")
         assert len(client.get(path).json()["trends"]) == 2
         assert client.get(path).json()["trends"][1]["matches"] == []
@@ -81,6 +87,76 @@ def test_feed_age_and_thai_matches_are_workspace_scoped(monkeypatch):
         assert client.get(path + "/matches", params={"q": "Scotch-Brite"}).json()["matches"][0]["product_id"] == "cloth-a"
         assert client.get(path + "/matches", params={"q": "ผ้า"}).json()["matches"] == []
         assert calls == [1]
+    engine.dispose()
+
+
+def test_opportunity_ranks_with_imported_csv_and_excludes_unattributed_events(monkeypatch):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    sessions = sessionmaker(bind=engine)
+    with sessions.begin() as db:
+        db.add_all([Organization(id="a", name="A"), Organization(id="b", name="B")])
+        db.flush()
+        for index, name in enumerate(("A", "B", "C")):
+            db.add(Product(id=name, workspace_id="a", name=f"ผ้าไมโครไฟเบอร์ {name}",
+                           source_url=f"https://shopee.co.th/product/1/{index}"))
+        db.flush()
+        for product, sub_id in (("A", "shared"), ("B", "shared"), ("B", "ranked"), ("C", "cancelled")):
+            channel = "tiktok" if product == "B" and sub_id == "shared" else "facebook"
+            db.add(ChannelLink(workspace_id="a", product_id=product, channel=channel, sub_id=sub_id,
+                               affiliate_url=f"https://s.shopee.co.th/{sub_id}"))
+
+    def session():
+        with sessions() as db:
+            yield db
+
+    now = datetime.now(timezone.utc)
+    today = now.astimezone(BANGKOK).date()
+    oldest = today - timedelta(days=29)
+    earlier = oldest - timedelta(days=1)
+    monkeypatch.setattr(google_trends, "fetch_feed", lambda: (
+        google_trends.Trend("ผ้าไมโครไฟเบอร์", now, "2,000+"),
+    ))
+    monkeypatch.setattr(google_trends, "cache", google_trends.FeedCache())
+    app = FastAPI()
+    app.include_router(google_trends.router)
+    app.include_router(reports_router)
+    app.dependency_overrides.update({
+        get_db: session,
+        require_workspace: lambda workspace_id: WorkspaceContext(workspace_id, "owner", "owner"),
+    })
+    root = "/api/v1/workspaces/a"
+    clicks = f"""Click ID,Click Time,Sub ID,Channel
+C1,{today} 10:00:00,ranked-sale,Facebook
+C1,{today} 10:00:00,ranked-sale,Facebook
+C2,{oldest} 10:00:00,RANKED,Facebook
+OLD,{earlier} 10:00:00,ranked,Facebook
+AMBIG,{today} 10:00:00,shared,
+"""
+    orders = f"""Order ID,Order Time,Item ID,Order Status,Sub ID,Channel
+O1,{today} 10:00:00,1,Completed,ranked,Facebook
+O1,{today} 10:00:00,2,Completed,ranked,Facebook
+O2,{today} 11:00:00,1,Cancelled,ranked,Facebook
+O3,{today} 11:00:00,1,Unpaid,cancelled,Facebook
+OLD,{earlier} 11:00:00,1,Completed,ranked,Facebook
+"""
+    with TestClient(app) as client:
+        for kind, data in (("clicks", clicks), ("orders", orders)):
+            for workspace in ("a", "b"):
+                route = f"/api/v1/workspaces/{workspace}/affiliate-reports/import/{kind}"
+                client.post(route, files={"file": ("report.csv", data, "text/csv")}).raise_for_status()
+        ranked = client.get(root + "/trends").raise_for_status().json()
+        assert ranked["scoring"]["start"] == oldest.isoformat()
+        best, no_history, cancelled = ranked["trends"][0]["matches"]
+        assert [item["product_id"] for item in (best, no_history, cancelled)] == ["B", "A", "C"]
+        assert best["opportunity"] == {
+            "total": 62, "points": {"trend": 17, "relevance": 35, "clicks": 4, "orders": 6},
+            "clicks": 2, "orders": 1, "searches": 2000,
+        }
+        assert no_history["opportunity"]["clicks"] is None and no_history["opportunity"]["orders"] is None
+        assert cancelled["opportunity"]["orders"] == 0
+        lookup = client.get(root + "/trends/matches", params={"q": "ผ้าไมโครไฟเบอร์"}).json()
+        assert "opportunity" not in lookup["matches"][0]
     engine.dispose()
 
 

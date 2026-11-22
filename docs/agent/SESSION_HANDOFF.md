@@ -1,12 +1,20 @@
 # Session handoff
 
+## Phase 7 product opportunity ranking (2026-11-22)
+
+- The Google Trends page ranks up to five distinct products using estimated search volume (25 points), keyword relevance (35), attributed clicks (15) and eligible unique orders (25). CSV history covers 30 Bangkok calendar days. The page shows each component and distinguishes missing data from an observed zero.
+- An isolated integration test imported click and order CSVs through the normal upload API. The first-ranked product received 62/100 from 2 attributable clicks, 1 eligible unique order and a trend showing 2,000+ searches. The test covered duplicate clicks, multiline orders, cancelled and unpaid orders, ambiguous Sub IDs, workspace isolation and the date boundary.
+- Chromium verified the real Thailand feed in the existing Studio. It showed 10 trends, no matches and no imported Affiliate report rows in the checked workspace. A controlled response verified score breakdown, missing-data labels, filters, deduplication across trends and navigation to inventory. The production build and 35 backend/publish-spike tests passed.
+- Before committing, the Studio API returned a current Thailand RSS snapshot fetched at 17:40 Bangkok time. The 24-hour view had 10 trends, 0 matched trends and 0 Affiliate CSV report groups. All 35 tests passed again.
+- Gemini, Veo and Shopee Open API remain deferred.
+
 ## Phase 7 Google Trends (2026-11-22)
 
 - Studio reads Thailand's official Google Trending Now RSS and shows 4- and 24-hour windows, freshness, approximate searches and Google Explore links. It matches Thai and Latin tokens against saved Shopee product names within the selected workspace. Manual keyword matching works independently of the feed.
 - At 17:28 Bangkok time the live Studio API returned 10 Thai trends for 24 hours and 3 for 4 hours. The workspace had one Shopee product and no automatic match to that live snapshot. Searching `ผ้าไมโครไฟเบอร์` returned the saved Scotch-Brite cloth with the terms `ผ้า`, `ไมโคร` and `ไฟเบอร์`. An unrelated football query returned no matches.
 - Chromium verified the live feed, time and keyword filters, the matching-only filter, and opening a saved product from manual search. `PYTHAINLP_READ_ONLY=1 PYTHAINLP_OFFLINE=1 backend/.venv/bin/python -m pytest backend/tests spikes/phase0_publish/tests -q` passed 34 tests with FFmpeg on PATH. The production web build and Alembic schema check passed.
 - A controlled RSS fixture verified automatic matching to a relevant product, workspace isolation, and exclusion of products from other domains. A cache test verified the fallback during a feed outage.
-- The feed has no category field. The production opportunity score and AI pipeline remain pending. Gemini, Veo and Shopee Open API remain deferred.
+- The feed has no category field. The opportunity score was added in the follow-up above. Gemini, Veo and Shopee Open API remain deferred.
 
 ## Phase 6 staging operations (2026-11-22)
 

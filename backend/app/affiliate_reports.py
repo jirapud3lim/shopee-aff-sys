@@ -136,16 +136,63 @@ def order_totals(rows):
     return estimated, confirmed
 
 
-@router.get("")
-def summary(context: Context, db: Database, start: date | None = None, end: date | None = None):
-    workspace = context.workspace_id
-    if start and end and start > end:
-        raise HTTPException(422, "Report start must be on or before the end date")
+def report_links(db, workspace):
     links = defaultdict(set)
     for channel, sub_id, product_id in db.execute(select(
         ChannelLink.channel, ChannelLink.sub_id, ChannelLink.product_id,
     ).where(ChannelLink.workspace_id == workspace, ChannelLink.sub_id.is_not(None))):
         links[sub_id.casefold()].add((channel, product_id))
+    return links
+
+
+def grouped_clicks(base):
+    return base.filter(AffiliateReportRow.kind == "clicks").with_entities(
+        AffiliateReportRow.day, AffiliateReportRow.sub_id, AffiliateReportRow.source_channel,
+        func.count(),
+    ).group_by(AffiliateReportRow.day, AffiliateReportRow.sub_id, AffiliateReportRow.source_channel)
+
+
+def grouped_orders(base, links):
+    orders = base.filter(AffiliateReportRow.kind == "orders").order_by(
+        AffiliateReportRow.order_key, AffiliateReportRow.row_key,
+    ).yield_per(1000)
+    for _, group in groupby(orders, key=lambda row: row.order_key):
+        rows = list(group)
+        sub_ids = {row.sub_id for row in rows if row.sub_id}
+        channels = {row.source_channel for row in rows if row.source_channel}
+        sub_id = next(iter(sub_ids)) if len(sub_ids) == 1 else None
+        channel = next(iter(channels)) if len(channels) == 1 else None
+        yield rows, attribution(sub_id, channel, links)
+
+
+def product_activity(db: Session, workspace: str, start: date, end: date, product_ids: set[str]):
+    """Summarize imported events attributable to one saved product, by report type."""
+    if not product_ids:
+        return {}, {}
+    links = report_links(db, workspace)
+    if not links:
+        return {}, {}
+    base = db.query(AffiliateReportRow).filter(
+        AffiliateReportRow.workspace_id == workspace, AffiliateReportRow.day.between(start, end),
+    )
+    clicks = defaultdict(int)
+    orders = defaultdict(int)
+    for _, sub_id, channel, count in grouped_clicks(base):
+        _, _, product_id = attribution(sub_id, channel, links)
+        if product_id in product_ids:
+            clicks[product_id] += count
+    for rows, (_, _, product_id) in grouped_orders(base, links):
+        if product_id in product_ids:
+            orders[product_id] += int(any(row.status not in {"cancelled", "unpaid"} for row in rows))
+    return clicks, orders
+
+
+@router.get("")
+def summary(context: Context, db: Database, start: date | None = None, end: date | None = None):
+    workspace = context.workspace_id
+    if start and end and start > end:
+        raise HTTPException(422, "Report start must be on or before the end date")
+    links = report_links(db, workspace)
     base = db.query(AffiliateReportRow).filter(AffiliateReportRow.workspace_id == workspace)
     bounds = {
         kind: {"first": first, "last": last}
@@ -164,24 +211,12 @@ def summary(context: Context, db: Database, start: date | None = None, end: date
         filters.append(AffiliateReportRow.day <= end)
 
     totals = defaultdict(lambda: [0, 0, 0, 0])
-    grouped_clicks = base.filter(*filters, AffiliateReportRow.kind == "clicks").with_entities(
-        AffiliateReportRow.day, AffiliateReportRow.sub_id, AffiliateReportRow.source_channel,
-        func.count(),
-    ).group_by(AffiliateReportRow.day, AffiliateReportRow.sub_id, AffiliateReportRow.source_channel)
-    for day, sub_id, source_channel, count in grouped_clicks:
+    window = base.filter(*filters)
+    for day, sub_id, source_channel, count in grouped_clicks(window):
         totals[(day, *attribution(sub_id, source_channel, links))][0] += count
 
-    orders = base.filter(*filters, AffiliateReportRow.kind == "orders").order_by(
-        AffiliateReportRow.order_key, AffiliateReportRow.row_key,
-    ).yield_per(1000)
-    for _, group in groupby(orders, key=lambda row: row.order_key):
-        rows = list(group)
-        tags = {(row.sub_id, row.source_channel) for row in rows}
-        sub_ids = {sub_id for sub_id, _ in tags if sub_id}
-        sub_id = next(iter(sub_ids)) if len(sub_ids) == 1 else None
-        channels = {channel for _, channel in tags if channel}
-        channel_hint = next(iter(channels)) if len(channels) == 1 else None
-        bucket = totals[(min(row.day for row in rows), *attribution(sub_id, channel_hint, links))]
+    for rows, tags in grouped_orders(window, links):
+        bucket = totals[(min(row.day for row in rows), *tags)]
         estimated, confirmed = order_totals(rows)
         bucket[1] += 1
         bucket[2] += estimated

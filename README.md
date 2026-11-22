@@ -43,6 +43,8 @@ Open **Google Trends** in Studio. Browse Thailand’s Trending Now RSS for the l
 
 Use **จับคู่คำค้นเอง** to check a phrase against the inventory and open it in Google Trends Explore. The Trending Now feed provides approximate search volumes and does not include a category field. The API caches the feed for 10 minutes and labels cached results when a refresh fails. The manual lookup uses the bundled Thai dictionary and works independently of the feed.
 
+**อันดับโอกาสสินค้า** lists the top five distinct products for the selected trends. If a product matches several visible trends, its highest-scoring match is shown. The 100-point score combines estimated search volume (25), keyword overlap and a phrase bonus (35), imported clicks (15), and imported unique orders (25). Volume components scale logarithmically and cap at 100,000 searches, 100 clicks and 20 orders. Report history covers the last 30 calendar days including today in Bangkok time. The score uses reports linked to one saved product by Sub ID and channel, and excludes cancelled or unpaid orders. Missing data contributes zero points and is labelled separately from a recorded zero. Manual search shows relevance only.
+
 ## Connect a local Facebook Page
 
 Complete the [Meta OAuth spike](spikes/phase0_meta/README.md) for the Page and run the backend migrations. Set `META_TEST_PAGE_ID`, `META_STUDIO_WORKSPACE_ID` (from `GET /api/v1/workspaces` for the workspace owner), and optionally `META_STUDIO_PAGE_NAME` and `META_STUDIO_EXAMPLE_REEL_ID` in the root `.env`. With the same `DATABASE_URL` as the normal Studio, start the API using the saved encrypted Page token.

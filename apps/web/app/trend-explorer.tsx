@@ -3,11 +3,19 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { StudioRequest } from "./meta-publishing";
 
-type Match = { product_id: string; name: string; terms: string[]; phrase: boolean };
-type Trend = {
-  title: string; published_at: string | null; traffic: string | null; explore_url: string; matches: Match[];
+type Points = { trend: number; relevance: number; clicks: number; orders: number };
+type Opportunity = {
+  total: number; points: Points; searches: number | null; clicks: number | null; orders: number | null;
 };
-type Feed = { source_url: string; stale: boolean; fetched_at: string; catalog_count: number; trends: Trend[] };
+type Match = { product_id: string; name: string; terms: string[]; phrase: boolean; coverage: number };
+type RankedMatch = Match & { opportunity: Opportunity };
+type Trend = {
+  title: string; published_at: string | null; traffic: string | null; explore_url: string; matches: RankedMatch[];
+};
+type Scoring = { weights: Points; start: string; end: string };
+type Feed = {
+  source_url: string; stale: boolean; fetched_at: string; catalog_count: number; trends: Trend[]; scoring: Scoring;
+};
 type Lookup = { query: string; explore_url: string; matches: Match[]; catalog_count: number };
 type Props = {
   request: StudioRequest;
@@ -21,6 +29,57 @@ type Props = {
 const bangkok = new Intl.DateTimeFormat("th-TH", {
   dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Bangkok",
 });
+const dateOnly = new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeZone: "Asia/Bangkok" });
+const count = new Intl.NumberFormat("th-TH");
+
+function rankedProducts(trends: Trend[]) {
+  const best = new Map<string, { item: RankedMatch; trend: Trend }>();
+  for (const trend of trends) {
+    for (const item of trend.matches) {
+      const current = best.get(item.product_id);
+      if (!current || item.opportunity.total > current.item.opportunity.total) {
+        best.set(item.product_id, { item, trend });
+      }
+    }
+  }
+  return [...best.values()].sort((a, b) => b.item.opportunity.total - a.item.opportunity.total).slice(0, 5);
+}
+
+function ProductRanking({ trends, scoring, busy, open }: {
+  trends: Trend[]; scoring: Scoring; busy: boolean; open: (id: string) => void;
+}) {
+  const ranked = rankedProducts(trends);
+  const { weights, start, end } = scoring;
+  return <section className="product-ranking" aria-labelledby="product-ranking-title">
+    <h3 id="product-ranking-title">อันดับโอกาสสินค้า</h3>
+    <p className="muted">คะแนนเต็ม 100 จากเทรนด์ {weights.trend} · ความตรง {weights.relevance} ·
+      คลิก {weights.clicks} · คำสั่งซื้อ {weights.orders}</p>
+    <p className="muted">ข้อมูล CSV ช่วง 30 วัน ({dateOnly.format(Date.parse(start))} – {dateOnly.format(Date.parse(end))})
+      เชื่อมด้วย Sub ID ที่ระบุสินค้าได้ ข้อมูลที่ขาดให้ 0 คะแนนในส่วนนั้น</p>
+    {ranked.length ? <ol className="ranked-products">
+      {ranked.map(({ item, trend }) => {
+        const { total, points, searches, clicks, orders } = item.opportunity;
+        return <li key={item.product_id}>
+          <div className="ranked-product-title">
+            <button type="button" className="text-button" disabled={busy} onClick={() => open(item.product_id)}>{item.name}</button>
+            <strong>{total}/100 คะแนน</strong>
+          </div>
+          <p className="muted">เทรนด์ “{trend.title}”</p>
+          <dl className="opportunity-details">
+            <div><dt>ความแรงเทรนด์ {points.trend}/{weights.trend}</dt>
+              <dd>{searches === null ? "ไม่มีปริมาณค้นหา" : `ค้นหาประมาณ ${trend.traffic ?? count.format(searches)}`}</dd></div>
+            <div><dt>ความตรง {points.relevance}/{weights.relevance}</dt>
+              <dd>{item.coverage}%{item.phrase ? " · ตรงทั้งวลี" : ""} · {item.terms.join(" · ")}</dd></div>
+            <div><dt>คลิก {points.clicks}/{weights.clicks}</dt>
+              <dd>{clicks === null ? "ไม่มีคลิกที่เชื่อมได้" : `${count.format(clicks)} คลิก`}</dd></div>
+            <div><dt>คำสั่งซื้อ {points.orders}/{weights.orders}</dt>
+              <dd>{orders === null ? "ไม่มีคำสั่งซื้อที่เชื่อมได้" : `${count.format(orders)} คำสั่งซื้อที่นับได้`}</dd></div>
+          </dl>
+        </li>;
+      })}
+    </ol> : <p className="muted">ยังไม่มีสินค้าที่ตรงกับเทรนด์ในตัวกรองนี้สำหรับจัดอันดับ</p>}
+  </section>;
+}
 
 function Matches({ matches, busy, open }: { matches: Match[]; busy: boolean; open: (id: string) => void }) {
   if (!matches.length) return <p className="muted">ยังไม่พบสินค้าที่ตรงในคลัง</p>;
@@ -111,6 +170,7 @@ export default function TrendExplorer({ request, scope, token, active, busy, onP
       <p className="muted">จำนวนค้นหาเป็นค่าประมาณจาก Google สำหรับเทรนด์ในฟีด</p>
       {loading && <p role="status">กำลังโหลด Google Trends…</p>}
       {feedError && <p role="alert" className="notice error">{feedError}</p>}
+      {feed && !loading && <ProductRanking trends={trends} scoring={feed.scoring} busy={busy} open={onProduct} />}
       {feed && !loading && (trends.length ? <ul className="trend-list">
         {trends.map((trend) => <li key={trend.title} className="trend-row">
           <div>

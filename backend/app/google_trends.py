@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
+from math import log1p
+import re
 from threading import Lock
 from typing import Annotated, Literal
 from unicodedata import normalize
@@ -14,9 +16,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .affiliate_reports import product_activity
 from .auth import WorkspaceContext, require_workspace
 from .db import get_db
 from .products import Product
+from .shopee_report_csv import BANGKOK
 
 FEED_URL = "https://trends.google.com/trending/rss?geo=TH"
 SOURCE_URL = "https://trends.google.com/trending?geo=TH"
@@ -24,6 +28,8 @@ MAX_FEED_BYTES = 512 * 1024
 FEED_TTL = timedelta(minutes=10)
 RETRY_DELAY = timedelta(minutes=1)
 STALE_LIMIT = timedelta(hours=24)
+HISTORY_DAYS = 30
+SCORE_WEIGHTS = {"trend": 25, "relevance": 35, "clicks": 15, "orders": 25}
 STOP_WORDS = frozenset((
     "สำหรับ", "ของ", "ใน", "ขนาด", "แบบ", "แพ็ก", "แพ็ค", "ตัว", "สินค้า", "ใหม่",
     "ราคา", "รีวิว", "วันนี้", "ไทย", "ออนไลน์", "ดีที่สุด", "ที่", "และ", "มี", "คือ",
@@ -165,7 +171,30 @@ def match(title: str, products):
     matches.sort(key=lambda item: (
         -item["coverage"], not item["phrase"], -len(item["terms"]), item["name"], item["product_id"],
     ))
-    return matches[:5]
+    return matches
+
+
+def traffic_count(value: str | None) -> int | None:
+    found = re.fullmatch(r"(\d+(?:\.\d+)?)([KM])?\+?", (value or "").replace(",", "").upper())
+    if found is None:
+        return None
+    multiplier = {None: 1, "K": 1000, "M": 1000000}[found[2]]
+    return int(float(found[1]) * multiplier)
+
+
+def volume_points(value: int | None, cap: int, weight: int) -> int:
+    return round(weight * log1p(min(value or 0, cap)) / log1p(cap))
+
+
+def opportunity(item, searches, clicks, orders):
+    points = {
+        "trend": volume_points(searches, 100_000, SCORE_WEIGHTS["trend"]),
+        "relevance": round(30 * item["coverage"] / 100) + 5 * item["phrase"],
+        "clicks": volume_points(clicks, 100, SCORE_WEIGHTS["clicks"]),
+        "orders": volume_points(orders, 20, SCORE_WEIGHTS["orders"]),
+    }
+    return {"total": sum(points.values()), "points": points, "clicks": clicks, "orders": orders,
+            "searches": searches}
 
 
 def explore_url(title: str) -> str:
@@ -190,8 +219,20 @@ def list_trends(context: Context, db: Database, hours: Literal["4", "24"] = "24"
             "title": trend.title, "published_at": trend.published_at, "traffic": trend.traffic,
             "explore_url": explore_url(trend.title), "matches": match(trend.title, products),
         })
+    end = now.astimezone(BANGKOK).date()
+    start = end - timedelta(days=HISTORY_DAYS - 1)
+    candidates = {item["product_id"] for entry in entries for item in entry["matches"]}
+    clicks, orders = product_activity(db, context.workspace_id, start, end, candidates)
+    for entry in entries:
+        searches = traffic_count(entry["traffic"])
+        for item in entry["matches"]:
+            product_id = item["product_id"]
+            item["opportunity"] = opportunity(item, searches, clicks.get(product_id), orders.get(product_id))
+        entry["matches"].sort(key=lambda item: -item["opportunity"]["total"])
+        entry["matches"] = entry["matches"][:5]
     return {"region": "TH", "source_url": SOURCE_URL, "fetched_at": snapshot.fetched_at,
-            "stale": stale, "catalog_count": len(products), "trends": entries}
+            "stale": stale, "catalog_count": len(products), "trends": entries,
+            "scoring": {"weights": SCORE_WEIGHTS, "start": start, "end": end}}
 
 
 @router.get("/matches")
@@ -201,4 +242,4 @@ def lookup_products(context: Context, db: Database, q: Annotated[str, Query(min_
         raise HTTPException(422, "Enter a search phrase")
     products = catalog(db, context.workspace_id)
     return {"query": query, "explore_url": explore_url(query),
-            "matches": match(query, products), "catalog_count": len(products)}
+            "matches": match(query, products)[:5], "catalog_count": len(products)}

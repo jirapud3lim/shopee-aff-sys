@@ -152,6 +152,14 @@ dd { color: var(--green-dark); font-weight: 650; margin: 0; }
 .trend-row h3, .trend-matches p { overflow-wrap: anywhere; }
 .trend-matches { display: grid; gap: .55rem; }
 .trend-matches button { text-align: start; }
+.product-ranking { border-top: 1px solid var(--line); padding-top: 1rem; }
+.ranked-products { padding-inline-start: 1.5rem; }
+.ranked-products li { padding: .65rem .4rem; border-bottom: 1px solid var(--line); }
+.ranked-product-title { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem 1rem; }
+.ranked-product-title button { text-align: start; overflow-wrap: anywhere; }
+.opportunity-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: .45rem 1rem; }
+.opportunity-details dt { font-weight: 650; }
+.opportunity-details dd { margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 700px) {
   .trend-row { grid-template-columns: minmax(0, 1fr); gap: .65rem; }
 }
