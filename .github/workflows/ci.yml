@@ -1,0 +1,29 @@
+name: Studio checks
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  studio:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: sqlite:////tmp/studio-ci.db
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: astral-sh/setup-uv@v6
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: uv sync --locked --project backend --extra test
+      - run: uv run --project backend alembic -c backend/alembic.ini upgrade head
+      - run: uv run --project backend alembic -c backend/alembic.ini check
+      - run: uv run --project backend --extra test pytest backend/tests -q
+      - run: npm ci --prefix apps/web
+      - run: npm run build --prefix apps/web

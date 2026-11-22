@@ -1,6 +1,6 @@
 # PHASE_05 — Bulk Campaigns & Automation
 
-> Status: NOT STARTED | Owner: unassigned | Last reviewed: 2026-11-22
+> Status: IN PROGRESS (500-job provider simulation verified) | Owner: unassigned | Last reviewed: 2026-11-22
 > Parent plan: `../ROADMAP.md` | Source of truth for this phase: this file
 
 ## Scope and boundaries
@@ -64,4 +64,4 @@
 
 ## Notes / decisions
 
-- Pending.
+- The in-memory publish service reconciled 500 simulated finish timeouts across five Pages without duplicate Reels. The scheduler, workers, campaign UI, and staging workload remain pending.

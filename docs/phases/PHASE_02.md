@@ -1,6 +1,6 @@
 # PHASE_02 — Product Collector & Affiliate Library
 
-> Status: NOT STARTED | Owner: unassigned | Last reviewed: 2026-11-22
+> Status: IN PROGRESS (manual and CSV product flows verified) | Owner: unassigned | Last reviewed: 2026-11-22
 > Parent plan: `../ROADMAP.md` | Source of truth for this phase: this file
 
 ## Scope and boundaries
@@ -20,7 +20,7 @@
 **Objective:** Reliable data ingestion and product inventory for downstream content creation.
 
 ### Product management
-- [ ] Implement manual product entry/edit and validation.
+- [x] Implement manual product entry/edit and validation.
 - [ ] Create `products`, `product_images`, `affiliate_links`, `product_import_batches`, `product_snapshots`.
 - [ ] Build product grid/table view with filter, search, sort, pagination and tags.
 - [ ] Support source URL, affiliate URL, product name, price/currency, category and multiple images.
@@ -37,7 +37,7 @@
 - [ ] Design Chrome MV3 extension (minimum permissions).
 - [ ] Capture only authorized product information; send securely to backend API.
 - [ ] Validate extension behavior against website terms; do not bypass CAPTCHA/auth controls.
-- [ ] Keep manual input and CSV as primary fallbacks for unsupported sources.
+- [x] Keep manual input and CSV as primary fallbacks for unsupported sources.
 - [ ] Optionally integrate an authorized Shopee affiliate API only after approval.
 
 **Acceptance criteria:** Import 100 test products reliably, detect duplicates, retain affiliate links, and enforce tenant isolation.
@@ -53,4 +53,4 @@
 
 ## Notes / decisions
 
-- Pending.
+- The local slice supports manual entry and editing, CSV import, duplicate and error reporting, user-supplied affiliate URLs and notes on image rights. Live Shopee API execution is pending. The 100-row CSV acceptance test passed, including duplicate detection on replay and isolation across workspaces.

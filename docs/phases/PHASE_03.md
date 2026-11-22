@@ -1,6 +1,6 @@
 # PHASE_03 — Content Studio & Template Video Engine
 
-> Status: NOT STARTED | Owner: unassigned | Last reviewed: 2026-11-22
+> Status: IN PROGRESS (single-product FFmpeg preview verified) | Owner: unassigned | Last reviewed: 2026-11-22
 > Parent plan: `../ROADMAP.md` | Source of truth for this phase: this file
 
 ## Scope and boundaries
@@ -57,4 +57,4 @@
 
 ## Notes / decisions
 
-- Pending.
+- Three uploaded still images render to a guarded 15-second MP4 preview after normalization and ffprobe validation. Rendering runs on the API process. Batch templates, workers and object storage are pending.

@@ -1,0 +1,148 @@
+.studio-view:not([hidden]) { display: contents; }
+.sidebar nav a[aria-current] { background: #315543; font-weight: 700; }
+
+.affiliate-results {
+  --accent: #a44726;
+  --accent-soft: #f9ede3;
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+.affiliate-results h1 { font-size: clamp(2rem, 4vw, 3.35rem); letter-spacing: -.04em; }
+.affiliate-results h2 { font-size: clamp(1.15rem, 2.2vw, 1.5rem); }
+.affiliate-header, .affiliate-section-head, .affiliate-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .65rem 1rem;
+}
+.affiliate-header { align-items: flex-start; }
+.affiliate-demo-label {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 2rem;
+  padding: .4rem .8rem;
+  font-size: .88rem;
+  font-weight: 700;
+}
+.affiliate-overview { display: grid; gap: .65rem; }
+.affiliate-range { font-size: .88rem; }
+.affiliate-filters select, .affiliate-sort select { width: auto; }
+.affiliate-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .2rem;
+  padding: .2rem;
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  background: #eaf0ea;
+}
+.affiliate-toggle button {
+  background: none;
+  border: 0;
+  border-radius: .44rem;
+  color: var(--green-dark);
+  font-size: .9rem;
+  font-weight: 650;
+  min-height: 2.25rem;
+  padding: .4rem .65rem;
+}
+.affiliate-toggle button[aria-pressed="true"] { background: var(--surface); box-shadow: 0 1px 3px #16382b1a; }
+.affiliate-dates { display: flex; flex-wrap: wrap; gap: .75rem; }
+.affiliate-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; }
+.affiliate-metric {
+  display: grid;
+  gap: .55rem;
+  text-align: start;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: .85rem;
+  padding: clamp(.75rem, 2vw, 1.2rem);
+}
+.affiliate-metric span { font-size: .9rem; font-weight: 600; }
+.affiliate-metric strong { font-size: clamp(1.4rem, 3vw, 2.1rem); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.affiliate-metric[aria-pressed="true"] { background: var(--green-dark); color: #fff; border-color: var(--green-dark); }
+
+.affiliate-trending .affiliate-section-head p { font-size: .88rem; }
+.affiliate-trend-grid, .affiliate-link-list { padding: 0; margin: 0; list-style: none; }
+.affiliate-trend-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
+.affiliate-trend-card { border: 1px solid var(--line); border-radius: .75rem; overflow: hidden; }
+.affiliate-product-photo {
+  aspect-ratio: 1.35;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+.affiliate-photo-fan { background-color: #e3ede3; background-image: url("/affiliate-demo/fan.webp"); }
+.affiliate-photo-tumbler { background-color: #dfe9ed; background-image: url("/affiliate-demo/tumbler.webp"); }
+.affiliate-photo-organizer { background-color: #f3e5da; background-image: url("/affiliate-demo/organizer.webp"); }
+.affiliate-trend-info { display: grid; justify-items: start; align-content: start; gap: .3rem; padding: .8rem .85rem; }
+.affiliate-trend-info h3 { font-size: 1rem; }
+.affiliate-category, .affiliate-trend-reason, .affiliate-trend-info summary, .affiliate-trend-channels { font-size: .85rem; }
+.affiliate-category { color: var(--muted); }
+.affiliate-price { font-weight: 750; }
+.affiliate-trend-reason { color: var(--accent); font-weight: 650; }
+.affiliate-trend-channels { margin: .3rem 0; padding-inline-start: 1.1rem; }
+.affiliate-trend-info > button { font-weight: 700; min-height: 2.4rem; }
+
+.affiliate-chart-legend { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .87rem; color: var(--muted); }
+.affiliate-chart-legend span::before {
+  content: "";
+  display: inline-block;
+  width: .75rem;
+  height: .75rem;
+  margin-inline-end: .4rem;
+  border-radius: .15rem;
+  background: #35654e;
+}
+.affiliate-chart-legend span + span::before { background: #b6cbb9; border: 1px solid #809f87; }
+.affiliate-chart { display: flex; gap: .25rem; text-align: center; }
+.affiliate-chart-point { flex: 1 1 0; min-width: 0; display: grid; justify-items: center; gap: .35rem; }
+.affiliate-chart-point > span { white-space: nowrap; color: var(--muted); font-size: .75rem; }
+.affiliate-bars {
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  gap: min(.3rem, 1vw);
+  width: 100%;
+  height: clamp(7rem, 18vw, 13rem);
+  border-bottom: 1px solid #b9c6bc;
+  background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), #eff2ee calc(25% - 1px) 25%);
+}
+.affiliate-bars > div { width: min(33%, 1.7rem); border-radius: .25rem .25rem 0 0; }
+.affiliate-current-bar { background: #35654e; }
+.affiliate-prior-bar { background: #b6cbb9; }
+.affiliate-chart-data table { margin-top: .6rem; width: 100%; border-collapse: collapse; font-size: .85rem; }
+.affiliate-chart-data th, .affiliate-chart-data td { text-align: start; padding: .4rem; border-bottom: 1px solid var(--line); }
+
+.affiliate-sort { display: flex; align-items: center; gap: .5rem; }
+.affiliate-link {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(0, 1.75fr);
+  align-items: center;
+  gap: .75rem 1rem;
+  padding: .8rem 0;
+  border-top: 1px solid var(--line);
+}
+.affiliate-link > div > button.text-button { text-align: start; font-weight: 700; }
+.affiliate-link p, .affiliate-source-note { font-size: .85rem; }
+.affiliate-link-detail { grid-column: 1 / -1; }
+.affiliate-link-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.affiliate-link-metrics div { display: grid; justify-content: start; border: 0; padding: 0; gap: .15rem; }
+.affiliate-link-metrics dt { color: var(--muted); font-size: .8rem; }
+.affiliate-link-metrics dd { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 1050px) {
+  .affiliate-link { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .affiliate-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .affiliate-trend-grid { grid-template-columns: minmax(0, 1fr); }
+  .affiliate-trend-card { display: grid; grid-template-columns: minmax(5.75rem, 30%) minmax(0, 1fr); }
+  .affiliate-product-photo { aspect-ratio: auto; min-height: 8rem; }
+}
+@media (max-width: 420px) {
+  .affiliate-link-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

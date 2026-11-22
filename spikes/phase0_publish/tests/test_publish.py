@@ -206,3 +206,18 @@ def test_comment_unknown_not_found_after_window_fails_then_retry_posts_once(svc,
     svc.post_comment(job)
     assert job.comment_status is CommentStatus.POSTED
     assert len(fake.comments[job.remote_video_id]) == 1
+
+
+def test_500_campaign_jobs_reconcile_without_duplicate_reels(svc, fake):
+    for page_number in range(5):
+        page_id = f"campaign-page-{page_number}"
+        for product_number in range(100):
+            asset_id = f"asset-{product_number}"
+            key = make_idempotency_key("org-1", asset_id, page_id, asset_id)
+            job = svc.submit(key, page_id, "Campaign preview", URL)
+            fake.script(Phase.FINISH, B.TIMEOUT_APPLIED)
+            assert svc.run(job).status is V.UNKNOWN
+            assert svc.reconcile(job).status is V.PUBLISHED
+            assert svc.run(svc.submit(key, page_id, "Campaign preview", URL)) is job
+        assert len(fake.published_reels(page_id)) == 100
+    assert fake.calls.count(Phase.FINISH) == 500

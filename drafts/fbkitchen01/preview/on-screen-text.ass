@@ -1,0 +1,21 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Headline,Sukhumvit Set,90,&H00F2FAFF,&H00F2FAFF,&H001D2F28,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1
+Style: Support,Sukhumvit Set,53,&H00D8E7E0,&H00D8E7E0,&H001D2F28,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1
+Style: Brand,Sukhumvit Set,41,&H00F2FAFF,&H00F2FAFF,&H001D2F28,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:15.00,Brand,,0,0,0,,{\an7\pos(105,163)}คัดของเข้าบ้าน
+Dialogue: 0,0:00:00.00,0:00:05.00,Headline,,0,0,0,,{\an7\pos(108,1181)}จัดมุม\Nทำความสะอาดครัว
+Dialogue: 0,0:00:05.00,0:00:10.00,Headline,,0,0,0,,{\an7\pos(108,1158)}มาจิคลีน
+Dialogue: 0,0:00:05.00,0:00:10.00,Support,,0,0,0,,{\an7\pos(108,1294)}สเปรย์ทำความสะอาดห้องครัว\Nขนาด 500 มล.
+Dialogue: 0,0:00:10.00,0:00:15.00,Headline,,0,0,0,,{\an7\pos(108,1130)\fs77}ตรวจคำแนะนำ\Nบนฉลากก่อนใช้
+Dialogue: 0,0:00:10.00,0:00:15.00,Support,,0,0,0,,{\an7\pos(108,1370)\fs43}หากซื้อผ่านลิงก์นี้\Nเพจอาจได้รับค่าคอมมิชชัน

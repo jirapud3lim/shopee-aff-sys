@@ -1,6 +1,6 @@
 # PHASE_04 — Meta OAuth & Facebook Reels Publishing
 
-> Status: NOT STARTED | Owner: unassigned | Last reviewed: 2026-11-22
+> Status: IN PROGRESS (local publishing simulation verified) | Owner: unassigned | Last reviewed: 2026-11-22
 > Parent plan: `../ROADMAP.md` | Source of truth for this phase: this file
 
 ## Scope and boundaries
@@ -52,4 +52,4 @@
 
 ## Notes / decisions
 
-- Pending.
+- A persisted simulation reuses the Phase 0 Meta test double, reconciles a finish timeout, verifies the comment author and handles duplicate requests. The separate OAuth spike remains live-verified. Workspace-managed Meta credentials, live Reel/comment endpoints and App Review are pending.

@@ -1,6 +1,6 @@
 # PHASE_00 — Planning & API Feasibility
 
-> Status: IN PROGRESS (docs done; live API proof blocked) | Owner: unassigned | Last reviewed: 2026-11-22
+> Status: IN PROGRESS (Meta OAuth and sample render verified; Reel and comment pending) | Owner: unassigned | Last reviewed: 2026-11-22
 > Parent plan: `../ROADMAP.md` | Source of truth for this phase: this file
 
 ## Scope and boundaries
@@ -22,7 +22,7 @@
 ### Preparation
 - [ ] Create and verify a Shopee Affiliate test account.
 - [ ] Prepare 10+ real test products with images, product URLs and affiliate links.
-- [ ] Create Meta for Developers account, Meta App and test Facebook Page(s).
+- [x] Create Meta for Developers account, Meta App and test Facebook Page(s).
 - [ ] Establish Git repository, issue tracker and development environment.
 - [ ] Read latest Shopee Affiliate terms, API eligibility and product-data reuse policies.
 - [ ] Read latest Meta Page Reels, OAuth, Page/comment permissions, platform policy and App Review documentation.
@@ -34,7 +34,7 @@
 - [x] Map full journey: import → affiliate URL → video → campaign → publish → comment → verify.
 - [x] Define business events, failure behavior and user-facing status model.
 - [x] Create architecture diagram, initial ERD and initial API contracts.
-- [ ] Prototype Meta OAuth and retrieve authorized Pages.
+- [x] Prototype Meta OAuth and retrieve authorized Pages.
 - [ ] Test one real Page Reel publish through current official API.
 - [ ] Test posting and reading an affiliate-link comment (where permitted).
 - [ ] Test publishing idempotency/reconciliation behavior after ambiguous timeouts.
@@ -59,5 +59,5 @@
 
 - 2026-11-22: Docs drafted (PRD, SYSTEM, ERD, API_FEASIBILITY, ADR-0001..0005, `docs/backlog/PHASE_00_BACKLOG.md`).
 - Idempotency/reconcile behaviour proven **against a fake only** (`spikes/phase0_publish`, 14 tests pass); the live checkbox stays open.
-- Video spec defined (ADR-0005) but render NOT RUN: ffmpeg not installed (blocker B4).
-- Exit gate status: no live E2E proof; blockers B1–B7 + fallbacks documented in API_FEASIBILITY §5.
+- FFmpeg 9.0.2 rendered and verified a synthetic 15-second sample against ADR-0005.
+- Live Meta OAuth verified in Development Mode. The callback returned one sandbox Page and all five Page permissions. The full publishing and comment flow remains pending.

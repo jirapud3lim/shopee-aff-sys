@@ -9,3 +9,15 @@ __pycache__/
 .pytest_cache/
 spikes/phase0_meta/.secrets/
 spikes/phase0_meta/evidence/
+.next/
+*.tsbuildinfo
+*.egg-info/
+*.db
+
+backend/local.db*
+spikes/phase0_publish/*.egg-info/
+
+backend/.local/
+drafts/fbkitchen01/preview/*.png
+drafts/fbkitchen01/preview/*.jpg
+drafts/fbkitchen01/preview/*.mp4

@@ -1,6 +1,6 @@
 # PHASE_01 — SaaS Foundation
 
-> Status: NOT STARTED | Owner: unassigned | Last reviewed: 2026-11-22
+> Status: IN PROGRESS (local account, workspace and database baseline verified) | Owner: unassigned | Last reviewed: 2026-11-22
 > Parent plan: `../ROADMAP.md` | Source of truth for this phase: this file
 
 ## Scope and boundaries
@@ -28,7 +28,7 @@
 - [ ] Create sitemap/navigation placeholders for future modules.
 
 ### Backend/data
-- [ ] Bootstrap FastAPI with versioned API routes and OpenAPI docs.
+- [x] Bootstrap FastAPI with versioned API routes and OpenAPI docs.
 - [ ] Add PostgreSQL, SQLAlchemy, Alembic and migration CI checks.
 - [ ] Create `users`, `organizations`, `organization_members`, `sessions`, `audit_logs`.
 - [ ] Implement session/security controls, password hashing and account verification.
@@ -38,7 +38,7 @@
 - [ ] Add request validation, consistent error contracts and pagination.
 - [ ] Add structured logs, correlation IDs and exception tracking.
 - [ ] Set up Docker Compose for local dev; create staging deployment.
-- [ ] Add automated unit, integration and tenant-isolation tests.
+- [x] Add automated unit, integration and tenant-isolation tests.
 
 **Acceptance criteria:** Users register/login, create/switch workspaces and cannot access another tenant's resources. Staging deploy and schema migrations are repeatable.
 
@@ -53,4 +53,4 @@
 
 ## Notes / decisions
 
-- Pending.
+- Local baseline implemented with a FastAPI API, SQLite and PostgreSQL migrations, Argon2 passwords, hashed session tokens, and tenant-scoped access. Staging, invitations, account verification and password reset are pending.
