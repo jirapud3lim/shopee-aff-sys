@@ -166,7 +166,7 @@ async function openAffiliate(message, sender) {
     if (result?.ready) {
       affiliateJobs.set(tab.id, { id, source, senderId: sender.tab?.id });
       setTimeout(() => affiliateJobs.delete(tab.id), 125_000);
-      return { tabId: tab.id };
+      return { tabId: tab.id, source };
     }
     await sleep(300);
   } while (Date.now() < deadline);

@@ -12,7 +12,9 @@ type Trend = {
   offer_matches: { offer_id: string; score: number }[];
 };
 type TrendFeed = { trends: Trend[]; stale: boolean };
-type Card = { selection: Selection; offer?: Offer; trend?: Trend; score?: number };
+export type DiscoverySelection = { selection: Selection; offer?: Offer; trend?: Trend };
+type Card = DiscoverySelection & { score?: number };
+type Link = { product_id: string; channel: string | null };
 
 const count = new Intl.NumberFormat("th-TH");
 const baht = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB" });
@@ -45,46 +47,66 @@ function trendCards(feed: TrendFeed | undefined, products: CatalogProduct[], off
   return [...cards.values()].sort((left, right) => (right.score ?? 0) - (left.score ?? 0));
 }
 
-function ProductCard({ card, onChoose }: { card: Card; onChoose: (item: Selection, trend: string) => void }) {
+export function ProductMetrics({ offer, trend }: { offer?: Offer; trend?: Trend }) {
+  return <>
+    {trend && <p className="discovery-trend">{trend.title}{trend.traffic && ` · ค้นหา Google ประมาณ ${trend.traffic}`}</p>}
+    {offer && <dl className="discovery-metrics">
+      <div><dt>ราคา</dt><dd>{baht.format(visiblePrice(offer))}</dd></div>
+      <div><dt>ยอดขาย Shopee</dt><dd>{count.format(offer.sold)}{offer.sold_is_minimum && "+"}</dd></div>
+      <div><dt>อัตราค่าคอม</dt><dd>{count.format(offer.commission_bps / 100)}%</dd></div>
+      <div><dt>คอม/ออเดอร์ (ประมาณ)</dt><dd>{baht.format(estimatedCommission(offer))}</dd></div>
+    </dl>}
+  </>;
+}
+
+function ProductCard({ card, onChoose, linkStatus }: { card: Card; onChoose: (item: DiscoverySelection) => void; linkStatus: boolean | undefined }) {
   const { selection, offer, trend } = card;
+  const [imageFailed, setImageFailed] = useState(false);
   return <article className="discovery-card">
-    {offer?.image_url && <img src={offer.image_url} alt="" width={480} height={300}
-      loading="lazy" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.hidden = true; }} />}
+    <div className="discovery-image">
+      {offer?.image_url && !imageFailed
+        ? <img src={offer.image_url} alt={selection.name} width={480} height={360}
+          loading="lazy" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} />
+        : <span>ยังไม่มีรูปสินค้า</span>}
+    </div>
     <div className="discovery-card-content">
-      {trend && <p className="discovery-trend">{trend.title}{trend.traffic && ` · ค้นหาประมาณ ${trend.traffic}`}</p>}
+      {linkStatus !== undefined && <p className={`discovery-link-status ${linkStatus ? "link-found" : ""}`}>
+        {linkStatus ? "มีลิงก์ Facebook แล้ว" : "ยังไม่มีลิงก์ Facebook"}
+      </p>}
       <h3>{selection.name}</h3>
-      {offer && <dl className="discovery-metrics">
-        <div><dt>ราคา</dt><dd>{baht.format(visiblePrice(offer))}</dd></div>
-        <div><dt>ยอดขาย Shopee</dt><dd>{count.format(offer.sold)}{offer.sold_is_minimum && "+"}</dd></div>
-        <div><dt>อัตราค่าคอม</dt><dd>{count.format(offer.commission_bps / 100)}%</dd></div>
-        <div><dt>คอม/ออเดอร์ (ประมาณ)</dt><dd>{baht.format(estimatedCommission(offer))}</dd></div>
-      </dl>}
+      <ProductMetrics offer={offer} trend={trend} />
       <button type="button" className="primary"
         aria-label={`เลือกสินค้า ${selection.name}`}
-        onClick={() => onChoose(selection, trend?.title ?? "")}>เลือกสินค้านี้</button>
+        onClick={() => onChoose(card)}>เลือกสินค้านี้ <span aria-hidden="true">↗</span></button>
     </div>
   </article>;
 }
 
-function Shelf({ cards, empty, onChoose }: { cards: Card[]; empty: ReactNode; onChoose: (item: Selection, trend: string) => void }) {
+function Shelf({ cards, empty, onChoose, linkStatus }: {
+  cards: Card[]; empty: ReactNode; onChoose: (item: DiscoverySelection) => void;
+  linkStatus: (card: Card) => boolean | undefined;
+}) {
   const [limit, setLimit] = useState(4);
   if (!cards.length) return <div className="panel">{empty}</div>;
   return <>
     <div className="discovery-grid">{cards.slice(0, limit).map((card) =>
-      <ProductCard key={card.selection.id} card={card} onChoose={onChoose} />)}</div>
+      <ProductCard key={card.selection.id} card={card} onChoose={onChoose} linkStatus={linkStatus(card)} />)}</div>
     {cards.length > limit && <button className="secondary discovery-more" type="button"
       onClick={() => setLimit((current) => current + 8)}>ดูสินค้าเพิ่ม</button>}
   </>;
 }
 
-export default function ProductDiscovery({ request, scope, token, products, onChoose }: {
+export default function ProductDiscovery({ request, scope, token, products, onChoose, linkRevision, recentWork }: {
   request: StudioRequest;
   scope: string;
   token: string;
   products: CatalogProduct[];
-  onChoose: (item: Selection, trend: string) => void;
+  onChoose: (item: DiscoverySelection) => void;
+  linkRevision: number;
+  recentWork?: { name: string; reviewed: boolean };
 }) {
   const [feed, setFeed] = useState<TrendFeed>();
+  const [links, setLinks] = useState<Link[]>();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [trendsStatus, setTrendsStatus] = useState<"loading" | "ready" | "error">("loading");
   const [offersStatus, setOffersStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -109,6 +131,22 @@ export default function ProductDiscovery({ request, scope, token, products, onCh
     return () => controller.abort();
   }, [request, revision, scope, token]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    request<Link[]>(scope + "/products/affiliate-links", token, { signal: controller.signal }).then((items) => {
+      if (!controller.signal.aborted) setLinks(items);
+    }).catch(() => { if (!controller.signal.aborted) setLinks(undefined); });
+    return () => controller.abort();
+  }, [request, scope, token, linkRevision]);
+
+  const linkedProducts = new Set(links?.filter((link) => link.channel === "facebook" || link.channel === null)
+    .map((link) => link.product_id));
+  function linkStatus(card: Card) {
+    if (!links) return undefined;
+    if (card.selection.kind === "catalog") return linkedProducts.has(card.selection.id);
+    return products.some((item) => listingItemId(item.source_url) === card.selection.id && linkedProducts.has(item.id));
+  }
+
   const metric = (offer: Offer) => sort === "estimate" ? estimatedCommission(offer)
     : sort === "rate" ? offer.commission_bps : offer.sold;
   const ranked = [...offers].sort((left, right) => metric(right) - metric(left) || right.sold - left.sold ||
@@ -117,7 +155,7 @@ export default function ProductDiscovery({ request, scope, token, products, onCh
 
   return <div className="discovery" id="discover">
     <header className="discovery-header">
-      <h1 tabIndex={-1}>เลือกสินค้า</h1>
+      <h1 tabIndex={-1}>ตลาดสินค้า</h1>
       <p className="muted">เลือกจากสินค้าตามกระแสหรือข้อเสนอค่าคอมสูง แล้ว Studio จะค้นลิงก์ Affiliate ให้</p>
       <button type="button" className="secondary discovery-jump" onClick={() => {
         const heading = document.getElementById("discovery-commission");
@@ -125,6 +163,10 @@ export default function ProductDiscovery({ request, scope, token, products, onCh
         heading?.scrollIntoView({ block: "start" });
       }}>ไปที่สินค้าค่าคอมสูง ↓</button>
     </header>
+    {recentWork && <section className="studio-resume">
+      <div><strong>งานล่าสุด</strong><p className="muted">{recentWork.name} · {recentWork.reviewed ? "มีฉากที่อนุมัติแล้ว" : "แผน Storyboard"}</p></div>
+      <a href="#storyboards" className="secondary">ทำต่อ →</a>
+    </section>}
     <section className="discovery-shelf" aria-labelledby="discovery-trends">
       <div className="discovery-section-head">
         <div>
@@ -133,7 +175,7 @@ export default function ProductDiscovery({ request, scope, token, products, onCh
         </div>
         <a href="#trends">ดูเทรนด์ทั้งหมด</a>
       </div>
-      <Shelf cards={trendCards(feed, products, offers)} onChoose={onChoose} empty={
+      <Shelf cards={trendCards(feed, products, offers)} onChoose={onChoose} linkStatus={linkStatus} empty={
         trendsStatus === "loading" ? <p role="status">กำลังโหลดเทรนด์…</p> :
         trendsStatus === "error" ? <><p role="alert">โหลด Google Trends ไม่สำเร็จ</p>{retry}</> :
         <p>ยังไม่พบสินค้าที่ตรงกับเทรนด์ <a href="#trends">เลือกคำค้นเพื่อคัดสินค้า</a></p>
@@ -153,7 +195,7 @@ export default function ProductDiscovery({ request, scope, token, products, onCh
       </div>
       <Shelf cards={ranked.map((offer) => ({
         selection: { kind: "offer", id: offer.offer_id, name: offer.name }, offer,
-      }))} onChoose={onChoose} empty={
+      }))} onChoose={onChoose} linkStatus={linkStatus} empty={
         offersStatus === "loading" ? <p role="status">กำลังโหลดข้อเสนอ…</p> :
         offersStatus === "error" ? <><p role="alert">โหลดข้อเสนอ Shopee ไม่สำเร็จ</p>{retry}</> :
         <p>ยังไม่มีข้อเสนอในพื้นที่ทำงาน <a href="#shopee-offers">นำเข้าข้อเสนอ Shopee</a></p>

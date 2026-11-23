@@ -1,5 +1,83 @@
 # Session handoff
 
+## A-100cm white Flow review (2026-11-24)
+
+- Used the approved storyboard panels 01, 02 v2, 03 and 04 for the DoCoMall A-100cm white variant, Shopee Shop `393014471` / Item `44610002166`, with the saved presenter's Callirrhoe voice off-screen. Flow rejected combining an exact first-frame lock with the audio reference, then produced four clips from the approved image references with Veo 3.1 Lite at 9:16 for 40 credits.
+- Downloaded and checked each 720 × 1280 source at approximately eight seconds. Shot 02 exposes the rod mount and starts its main narration around five seconds. Shot 03 adds an interior shelf and a row of boxes. Shot 04 changes some props. Checked frames and automated Thai transcription. Direct listening and the opening words of shot 01 remain unverified. All four originals were sent for separate review. Assembly and publication remain pending.
+- Flow sources in shot order are [01](https://flow.google.com/project/81d65799-15e1-4834-b708-4e17857d09ff/edit/9bd01143-16e7-4fc9-be21-cc15ac2c54cf), [02](https://flow.google.com/project/81d65799-15e1-4834-b708-4e17857d09ff/edit/c75b538c-7b32-4dbd-a6f0-93e260f2201b), [03](https://flow.google.com/project/81d65799-15e1-4834-b708-4e17857d09ff/edit/afcdd0b9-0fcb-4102-9520-7a2219ca8360), and [04](https://flow.google.com/project/81d65799-15e1-4834-b708-4e17857d09ff/edit/93674de9-56e6-4a81-90c2-114b84969606).
+- Commit verification passed TypeScript, launcher and Safari background syntax checks, and the staged diff check. Backend pytest passed 22 tests with three FFmpeg-dependent skips using a temporary Thai NLP data directory.
+
+## Option A navigation and Storyboard prompt (2026-11-24)
+
+- Grouped the existing Studio screens under Market, Affiliate links, Production, and Results. Kept the original hash routes for deep links and Safari Capture. The market shows the latest saved Storyboard when available.
+- The first production step accepts and saves a creative prompt, and incorporates it into the still-image brief. Existing plans without the prompt field remain readable. No real Flow generation or publication was submitted.
+- An isolated Studio browser test reached all 13 original views through the four menus, signed in with a fixture, reused its saved Affiliate link, saved the product-specific prompt, and loaded it in the still-only Flow brief. Webpack production build, TypeScript, and git diff checks passed. Backend pytest reported 22 passed and three FFmpeg-dependent skips.
+
+
+## Market Affiliate autofill (2026-11-24)
+
+- The market dialog now shows both saved Shopee URLs for the selected channel. When a link is missing and Safari Capture answers, selection starts its existing Shopee form handoff. The dialog retains the Affiliate route expected by the installed bridge while keeping the market behind it. Shopee still needs an explicit **เอา ลิงก์** click before returning a new link.
+- Verified actual saved listing and Facebook link data in the running QA workspace. TypeScript, extension syntax, diff checks and a mocked extension handoff passed. Safari Settings showed no installed extension, and the user chose to leave it unloaded. No live new link was generated.
+
+
+## Safari QA autofill (2026-11-24)
+
+- The one-time review launch now fills the QA account even when Safari has already supplied a different saved login. Verified the correct QA email and a populated masked password in Safari. The sign-in form was left ready to submit.
+
+
+## Option A production workflow (2026-11-24)
+
+- Applied the selected market design to Studio’s signed-in UI and connected the Affiliate link dialog to all five pipeline steps. Existing and new links lead to the same product-scoped storyboard, still review, generation handoff, MP4 review and publishing preparation. The prior standalone tools remain accessible.
+- The plan records its channel link. Shot approval is scoped to the displayed image version and workspace and records the reviewer and time. Editing the script creates a new plan with the existing reviewed references when the variant matches.
+- Browser QA on separate ports covered existing and new link paths, draft save and revision, one-shot approval, video settings, MP4 review and publishing preparation. Inspected the dialog at desktop and 390 px. The launcher now defaults to the macOS CA bundle when SSL_CERT_FILE is unset. Verified the live Thailand feed returned 200 and matched a fixture offer. API checks covered wrong-channel plans, shot bounds, cross-workspace access and stale approval after image replacement. Next.js webpack build, typecheck and diff checks passed. Backend pytest passed 22 tests with three FFmpeg-dependent skips. Flow video generation and publication were not submitted.
+
+
+## Local Studio QA login prefill (2026-11-23)
+
+- The macOS launcher selects the saved QA database and account when the two local QA files are available. The browser fills the test login form without submitting it. A same-origin, one-time ticket unlocks the prefill in local development and is cleared from the URL. Custom database configuration keeps manual sign-in.
+- Chromium verified both fields, the cleared URL fragment and manual sign-in. Direct checks verified the credentials, rejected other origins, invalid tickets and replay, and confirmed manual mode and terminal hangup cleanup. The Safari launch command was checked with a stand-in for `open`.
+
+
+## Local Studio review launcher (2026-11-23)
+
+- Added the executable `Open Studio.command` for macOS. It starts the Studio web server on port 3014 and the API on port 8001, opens Safari when the proxied API is healthy, and defaults to `backend/local.db`. Live publishing is disabled in the review session.
+- Verified HTTP 200 for the home page and direct and proxied API health using a temporary SQLite database. A macOS pseudo-terminal test confirmed both servers exited and freed their ports on terminal hangup, Ctrl+C, and API exit. The launcher declined to start when port 3014 was occupied. The Safari command and URL were verified with a stand-in for `open`.
+
+## JUDYDOLL v3 motion Reel delivered (2026-11-23)
+
+- Enabled Flow’s muted-video display temporarily. No clips were recoverable from the earlier cards. Agent R2 again failed to synthesize sound and Flow showed 716 available credits before the next attempt. Recovered 02P with the exact approved start frame in the direct Flow Frames composer. Verified Veo 3.1 Lite, 9:16 and one output with a displayed cost of 10 credits. Flow returned one silent native 8-second clip at 720 × 1280 and 24 fps. Downloaded it and restored muted-video display to off. [02P source in Flow](https://flow.google.com/project/81d65799-15e1-4834-b708-4e17857d09ff/edit/40d7e8b1-d09f-40bc-afc1-e21d57f35388)
+- Used the first 16 source frames at reduced speed for a 1.20-second insert from 3.10 to 4.30 seconds. This preserves the visible blink and stationary compact while trimming later mouth movement. FFprobe verified the Reel at 1080 × 1920, 30 fps and 450 frames, a full decode passed, and the audio hash matched the existing Callirrhoe narration. Verified the visual movement and cut points from the exported frames. Direct listening and mobile player review remain pending. The MP4 and source are in `backend/.local/judydoll-01-wave-v3-presenter/`. No publication was made.
+
+## Authorized 02P retry and still preview (2026-11-23)
+
+- The user explicitly approved one additional 10-credit attempt. Observed 716 available credits, confirmed Veo 3.1 Lite, 9:16 and one output, then submitted one retry with the approved 02P start frame and faint room tone. Flow again reported audio synthesis failure and indicated a refund. No motion clip was returned and no further generation was submitted.
+- Exported an internal still-based hybrid preview using the approved 02P image for 3.10–5.80 seconds. Verified a complete MP4 decode, 450 frames at 1080 × 1920 and 30 fps, the six cut points, and an identical Callirrhoe audio stream. Direct listening and mobile playback checks remain pending. The preview and its storyboard record are in `backend/.local/judydoll-01-wave-v3-presenter/`.
+
+## Approved 02P motion attempt (2026-11-23)
+
+- The user approved storyboard 02P. Verified Veo 3.1 Lite, vertical 9:16 and one output, attached the exact approved start frame, and authorized one 10-credit generation in Flow Agent. Flow reported an audio synthesis failure and indicated that the credits would be refunded. No downloadable motion clip was returned.
+- Checked the failed job and observed 716 available Flow credits. Prepared a single-shot retry with the same approved frame and image motion, allowing faint room tone to address the audio failure. Automatic approval review rejected submission because the original shot approval did not explicitly authorize a new credit-consuming retry. The retry remains unsent. No revised MP4 was exported.
+
+## Master Prompt v3 AI Presenter storyboard (2026-11-23)
+
+- Planned one JUDYDOLL #01 WAVE Presenter insert, 02P at 3.10–5.80 seconds in the 15-second v3 test. Verified the saved Flow character and its Callirrhoe voice. Attached the saved character, an approved angled product panel, and the exact SKU photo to Flow Agent. Verified image settings at 9:16 with one output and generated one still.
+- Reviewed the still for photorealism, character match, hands clear of the compact, one peach-pink compact, and the four-pan layout. Fine lettering remains too small to verify. The Flow original and exact 9:16 review crop are saved with the shot plan in `backend/.local/judydoll-01-wave-v3-presenter/`. [Storyboard 02P in Flow](https://flow.google.com/project/81d65799-15e1-4834-b708-4e17857d09ff/edit/65360b49-d914-48c2-9196-ad66f709465c). Awaiting approval of 02P before video generation.
+
+## Master Prompt v3 Reel pilot (2026-11-23)
+
+- Used the attached v3 in its default HUMAN / REAL_REVIEW mode for the same JUDYDOLL #01 WAVE Facebook Reel. The new 15-second cut opens on a crop of all four pans with the buying question, then shows the whole compact and each pair of pans. The ending names #01 WAVE and discloses the Flow narration and Affiliate link. The plan and caption are in `backend/.local/judydoll-01-wave-v3-pilot/` with the MP4.
+- FFprobe verified 1080 × 1920, 30 fps and 450 frames. The complete MP4 decoded, frame samples covered the five edits, and the existing Callirrhoe audio stream matched the prior pilot byte for byte. Direct listening, Facebook mobile player review, and image publication rights remain unverified. No new Flow generation or publication took place.
+
+## Master Prompt v2 Reel pilot (2026-11-23)
+
+- Clarified how the Master Prompt handles approved narration, photo-based previews, and disclosures for shared variant pickers. Cut one 15-second JUDYDOLL #01 WAVE Facebook Reel for internal review. It uses crops of the exact Shopee variant photo and the existing approved Callirrhoe track. No new Flow media was generated.
+- Verified in Safari that the saved Facebook Affiliate URL reaches Shop `1225687272` / Item `25923634164` with the matching Facebook Sub ID. The listing exposes the standalone `#01 WAVE` option.
+- FFprobe verified 1080 × 1920, 30 fps and 450 video frames. The complete MP4 decoded, a frame review covered all five edits, and Thai ASR plus a matching audio stream hash checked the retained narration. Direct listening, Facebook mobile placement, and publication rights for the listing image remain unverified. No upload or publication was performed. The MP4, preview sheet and shot/caption record are in `backend/.local/judydoll-01-wave-master-prompt-pilot/`.
+
+## Local Studio shutdown (2026-11-23)
+
+- Stopped the local Next.js server on port 3014 and FastAPI server on port 8001. Verified that both processes and the frontend launcher exited, the Studio ports had no listeners, and no campaign worker was running.
+
 ## Project workflow and TikTok handoff checkpoint (2026-11-23)
 
 - Documented verified product identity, Flow storyboard approval, MP4 review, platform disclosures, Facebook and TikTok publication paths, and Shopee Affiliate reporting in `docs/product/WORKFLOW.md`.

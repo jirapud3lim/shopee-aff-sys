@@ -6,7 +6,11 @@ See the [project workflow diagram](docs/product/WORKFLOW.md) for the steps from 
 
 ## Run locally
 
-Install Python 3.11+, [uv](https://docs.astral.sh/uv/), Node.js 20.9+, and FFmpeg with both `ffmpeg` and `ffprobe` on `PATH`. Run these commands from the repository root.
+Install Python 3.11+, [uv](https://docs.astral.sh/uv/), and Node.js 20.9+. Video rendering also needs FFmpeg with both `ffmpeg` and `ffprobe` on `PATH`.
+
+On macOS, double-click [Open Studio.command](<Open Studio.command>) in Finder or run `./Open\ Studio.command` from the repository root. It starts the local API and opens [Studio in Safari](http://127.0.0.1:3014) when ready. Closing its Terminal window or pressing **Ctrl+C** stops both servers. When the local QA database and password file are available, the launcher opens that workspace and fills in the test email and password once. Click **เข้าสู่ระบบ** to sign in. Otherwise it uses `backend/local.db` and leaves the form ready for manual sign-in. Exporting `DATABASE_URL` selects a database for manual sign-in. Live publishing is disabled in the review session.
+
+For manual startup, run these commands from the repository root.
 
 ```sh
 uv sync --project backend --extra test
@@ -75,7 +79,18 @@ The Studio home page shows product matches from Google Trends Thailand and saved
 
 For refreshes, open [Shopee Affiliate Product Offers](https://affiliate.shopee.co.th/offer/product_offer) in Safari and search or pick a Shopee category. With Affiliate Studio Capture 0.4.0 enabled and access granted to that site and local Studio, click **ดึงข้อเสนอจาก Safari** on **คัดสินค้า Shopee**. Studio updates matching offer IDs and includes the product image when the offer card exposes a supported image URL. Existing offers remain selectable and can pick up images on refresh.
 
-**เลือกสินค้านี้** checks for an existing link for the selected product, starting with Facebook. If no link exists and Safari Capture 0.4.0 is available on `http://127.0.0.1:3014`, it opens Shopee's custom link form with the product URL and Sub ID filled in. Sign in to Shopee Affiliate and click **เอา ลิงก์** there. Studio saves the returned link against the selected product and channel. The manual form remains available in browsers without the extension. **เตรียม Storyboard** opens the existing workflow for the same saved catalog product.
+From **ตลาดสินค้า**, click **เลือกสินค้านี้**. Studio shows the product URL, saved Affiliate link, and Sub ID for the selected channel when available. If the default channel has no saved link and Safari Capture is enabled, Studio prepares the official Shopee custom link form with the exact listing URL and Sub ID. In Shopee, click **เอา ลิงก์** and Studio saves the returned link for the same listing and channel. The form also offers manual entry when the extension is unavailable. Open the source listing and the saved link to verify the product and channel before continuing.
+
+The same dialog follows **เตรียม Storyboard → อนุมัติภาพนิ่ง → สร้างวิดีโอ → ตรวจพรีวิว → เผยแพร่**. It carries the verified product, variant, channel, Affiliate URL, and Sub ID. Still approvals apply to the displayed image version and selected shot numbers. A different image requires new approval. The video step lists the approved shots for manual Flow generation, and the preview step accepts a completed Studio render or finished MP4. The final step prepares the caption, disclosures, and media for the destination. Facebook simulation is available for saved Studio renders.
+
+Studio groups the original tools in four main menus.
+
+- **ตลาดสินค้า** contains the market and the contextual tools for Google Trends, Shopee offer import and ranking, and the product catalog.
+- **ลิงก์ Affiliate** contains saved links, channel filters, and link setup.
+- **งานผลิต** contains Storyboard, saved and rendered video, purchase previews, the campaign queue, publication simulation, and TikTok preparation.
+- **ผลลัพธ์** contains Shopee CSV reporting and Facebook Reel publication and read-back.
+
+Enter the creative prompt in the first step of the product workflow. Studio saves it with the plan and includes it in the still-image brief for Flow. Later steps retain the required image and video review gates.
 
 ### Prepare a still storyboard in Google Flow
 

@@ -1,15 +1,16 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import AffiliateLinks, { channelLabels } from "./affiliate-links";
-import AffiliateLinkSetup, { emptyJourney, readJourney, type AffiliateJourney, type CatalogProduct, type Selection } from "./affiliate-link-setup";
+import AffiliateLinkSetup, { emptyJourney, readJourney, type AffiliateJourney, type AffiliateLink, type CatalogProduct } from "./affiliate-link-setup";
 import AffiliateResults from "./affiliate-results";
 import Campaigns from "./campaigns";
 import MetaPublishing from "./meta-publishing";
-import ProductDiscovery from "./product-discovery";
+import ProductDiscovery, { type DiscoverySelection } from "./product-discovery";
+import ProductWorkflow from "./product-workflow";
 import PurchasePreviews from "./purchase-previews";
 import ShopeeOffers from "./shopee-offers";
-import Storyboards, { type StoryboardSource } from "./storyboards";
+import Storyboards, { type Board, type StoryboardSource } from "./storyboards";
 import TikTokPublishing from "./tiktok-publishing";
 import TrendExplorer from "./trend-explorer";
 
@@ -54,6 +55,24 @@ const steps = [
   { anchor: "campaigns", title: "แคมเปญ", detail: "จัดคิวและติดตามงานเผยแพร่" },
 ];
 
+const marketTools = [
+  { anchor: "trends", title: "สำรวจ Google Trends" },
+  { anchor: "shopee-offers", title: "จัดอันดับและนำเข้าข้อเสนอ Shopee" },
+  { anchor: "products", title: "คลังสินค้า / นำเข้า CSV" },
+];
+const productionTools = [
+  { anchor: "storyboards", title: "Storyboard และแผนที่บันทึกไว้" },
+  { anchor: "video", title: "ประกอบ Reel และตรวจวิดีโอ" },
+  { anchor: "purchase-previews", title: "Reel จากสินค้าที่เคยซื้อ" },
+  { anchor: "campaigns", title: "แคมเปญและคิวเผยแพร่" },
+  { anchor: "simulation", title: "ทดสอบเผยแพร่" },
+  { anchor: "tiktok-publishing", title: "เตรียมคลิปสำหรับ TikTok" },
+];
+const resultsTools = [
+  { anchor: "affiliate-results", title: "รายงาน Shopee และ Sub ID" },
+  { anchor: "meta-publishing", title: "Facebook · เผยแพร่และตรวจ Reel" },
+];
+
 function headers(token: string, json = false) {
   return {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -84,6 +103,7 @@ type ChannelLink = { channel: string; affiliate_url: string; sub_id: string | nu
 export default function Studio() {
   const [token, setToken] = useState("");
   const [mode, setMode] = useState<"login" | "register">("login");
+  const authForm = useRef<HTMLFormElement>(null);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [workspaceId, setWorkspaceId] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
@@ -104,7 +124,9 @@ export default function Studio() {
   const [linkChannel, setLinkChannel] = useState("facebook");
   const [anchor, setAnchor] = useState("");
   const [affiliateJourney, setAffiliateJourney] = useState<AffiliateJourney>(emptyJourney);
-  const [affiliateAutoStart, setAffiliateAutoStart] = useState(false);
+  const [productFlow, setProductFlow] = useState<{
+    product: DiscoverySelection; initialAffiliate?: { item: CatalogProduct; link: AffiliateLink };
+  }>();
   const [linkRevision, setLinkRevision] = useState(0);
   const [boardDraft, setBoardDraft] = useState<(StoryboardSource & { workspace: string }) | null>(null);
   const product = products.find((item) => item.id === productId);
@@ -124,7 +146,37 @@ export default function Studio() {
   const showingStoryboards = anchor === "storyboards";
   const showingTrends = anchor === "trends";
   const showingPurchases = anchor === "purchase-previews";
-  const showingWorkspace = !showingDiscovery && !showingResults && !showingLinks && !showingTrends && !showingPurchases && !showingOffers && !showingStoryboards;
+  const [recentStoryboard, setRecentStoryboard] = useState<Board>();
+  const marketActive = showingDiscovery || marketTools.some((item) => item.anchor === anchor);
+  const productionActive = productionTools.some((item) => item.anchor === anchor);
+  const resultsActive = resultsTools.some((item) => item.anchor === anchor);
+  const showingWorkspace = ["products", "video", "simulation", "meta-publishing", "tiktok-publishing", "campaigns"].includes(anchor);
+  const contextualTools = marketActive ? marketTools : productionActive ? productionTools : resultsActive ? resultsTools : [];
+
+  useEffect(() => {
+    const match = /^#review-login=([a-f0-9]{64})$/.exec(window.location.hash);
+    if (!match) return;
+    window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    void fetch("/api/review-prefill", {
+      method: "POST",
+      headers: { "x-studio-review-nonce": match[1] },
+      cache: "no-store",
+    }).then(async (response) => {
+      if (!response.ok) return;
+      const credentials: { email: string; password: string } = await response.json();
+      const form = authForm.current;
+      if (form?.dataset.mode !== "login") return;
+      const email = form.elements.namedItem("email");
+      const password = form.elements.namedItem("password");
+      if (email instanceof HTMLInputElement && password instanceof HTMLInputElement) {
+        // The one-time review launch selects the QA account even if Safari filled another login.
+        email.value = credentials.email;
+        password.value = credentials.password;
+      }
+    }).catch(() => {
+      // Leave the form available for manual sign-in.
+    });
+  }, []);
 
   useEffect(() => {
     const syncAnchor = () => setAnchor(window.location.hash.slice(1));
@@ -136,12 +188,21 @@ export default function Studio() {
   useEffect(() => {
     if (!workspaceId) return;
     const target = document.getElementById(anchor || "discover");
-    const journeyHeader = ["trends", "shopee-offers", "affiliate-links"].includes(anchor)
-      ? document.getElementById("affiliate-journey") : null;
-    (journeyHeader ?? target)?.scrollIntoView();
+    if (anchor === "discover" || !anchor) window.scrollTo(0, 0);
+    else target?.scrollIntoView();
     if (!showingWorkspace) target?.querySelector("h1")?.focus({ preventScroll: true });
     if (["products", "video", "tiktok-publishing"].includes(anchor)) target?.querySelector("h2")?.focus({ preventScroll: true });
   }, [anchor, showingWorkspace, workspaceId]);
+
+  useEffect(() => {
+    if (!workspaceId || !token || !showingDiscovery || productFlow) return;
+    const controller = new AbortController();
+    setRecentStoryboard(undefined);
+    api<Board[]>(scope + "/storyboards", token, { signal: controller.signal }).then((boards) => {
+      if (!controller.signal.aborted) setRecentStoryboard(boards[0]);
+    }).catch(() => {});
+    return () => controller.abort();
+  }, [productFlow, scope, showingDiscovery, token, workspaceId]);
 
   useEffect(() => {
     if (!linkPath || !token) return;
@@ -234,7 +295,7 @@ export default function Studio() {
     setImportReport(null);
     setNotice({ text: "", error: false });
     setAffiliateJourney(readJourney(id));
-    setAffiliateAutoStart(false);
+    setProductFlow(undefined);
     setWorkspaceId(id);
   }
 
@@ -248,9 +309,21 @@ export default function Studio() {
     window.location.hash = step;
   }
 
-  function chooseProduct(offer: Selection, trend: string) {
-    setAffiliateAutoStart(true);
-    goToAffiliateStep({ trend, offer }, "affiliate-links");
+  function chooseProduct(selection: DiscoverySelection, trend = selection.trend?.title ?? "") {
+    const next = { trend, offer: selection.selection };
+    setAffiliateJourney(next);
+    try {
+      sessionStorage.setItem(`affiliate-journey:${workspaceId}`, JSON.stringify(next));
+    } catch {
+      // The current tab can continue without browser storage.
+    }
+    setNotice({ text: "", error: false });
+    setProductFlow({ product: selection });
+  }
+
+  function saveWorkflowProduct(item: CatalogProduct) {
+    setProducts((current) => current.some((product) => product.id === item.id) ? current : [item, ...current]);
+    setLinkRevision((revision) => revision + 1);
   }
 
   function selectProduct(id: string) {
@@ -434,6 +507,96 @@ export default function Studio() {
     <p role={notice.error ? "alert" : "status"} className={`notice ${notice.error ? "error" : ""}`}>{notice.text}</p>
   );
 
+  const videoEditor = (
+    <form key={productId} onSubmit={createVideo}>
+      <h3>สร้าง Reel จากฟุตเทจและภาพสินค้า</h3>
+      <p className="muted">{product ? product.name : "เลือกสินค้าในคลังสินค้าก่อน"}</p>
+      {draft && !reelPlan.trim() && <fieldset disabled={!!busy} className="reel-script">
+        <legend>สคริปต์ Reel</legend>
+        <p className="muted">{draft.source === "trend" ? "เทรนด์" : "คำค้น"} · {draft.query}</p>
+        <p className="muted">แก้ข้อความที่จะขึ้นบนจอได้ ฉากละไม่เกิน 3 บรรทัด</p>
+        {draft.scenes.map((text, index) => <label key={sceneLabels[index]}>{sceneLabels[index]}
+          <textarea name="scene_texts" required maxLength={120} rows={2} value={text}
+            onChange={(event) => {
+              const value = event.target.value;
+              setDraft({ ...draft, scenes: draft.scenes.map((scene, i) => i === index ? value : scene) });
+            }} />
+        </label>)}
+        <button className="text-button" type="button" onClick={() => setDraft(null)}>นำสคริปต์ออก</button>
+      </fieldset>}
+      {product && !product.image_rights_note && <p className="muted">บันทึกสิทธิ์ใช้ฟุตเทจและภาพในคลังสินค้าก่อนเรนเดอร์</p>}
+      <label>เพิ่มคลิปหรือภาพสินค้า
+        <input type="file" accept=".mp4,.mov,image/jpeg,image/png,image/webp" multiple disabled={!!busy}
+          onChange={(event) => {
+            const next = [...mediaFiles, ...Array.from(event.currentTarget.files ?? [])];
+            event.currentTarget.value = "";
+            if (next.length > 12 || next.reduce((size, file) => size + file.size, 0) > 64 * 1024 * 1024) {
+              setNotice({ text: "เพิ่มได้ไม่เกิน 12 ไฟล์ รวมไม่เกิน 64 MiB", error: true });
+              return;
+            }
+            setMediaFiles(next);
+            setNotice({ text: "", error: false });
+          }} />
+      </label>
+      <p className="muted">ใช้คลิป MP4/MOV ร่วมกับภาพได้ แนะนำให้เปิดด้วยคลิปที่เห็นสินค้าชัด
+        ถ้าใช้ภาพอย่างเดียวให้เลือก 4–12 ภาพ ถ้าใช้คลิปอย่างเดียวให้มีฟุตเทจรวมอย่างน้อย 15 วินาที
+        ตัวอย่างไม่มีเสียงจากคลิปต้นฉบับ</p>
+      {mediaFiles.length > 0 && <ol className="reel-media" aria-label="ลำดับไฟล์ใน Reel">
+        {mediaFiles.map((file, index) => <li key={index}>
+          <span><strong>A{index + 1}</strong> · {file.name}</span>
+          {[-1, 1].map((direction) => <button key={direction} type="button" className="text-button"
+            disabled={!!busy || index + direction < 0 || index + direction >= mediaFiles.length}
+            aria-label={`${direction < 0 ? "เลื่อนขึ้น" : "เลื่อนลง"} ${file.name}`}
+            onClick={() => {
+              const target = index + direction;
+              setMediaFiles((files) => {
+                const next = [...files];
+                [next[index], next[target]] = [next[target], next[index]];
+                return next;
+              });
+            }}>{direction < 0 ? "ขึ้น" : "ลง"}</button>)}
+          <button type="button" className="text-button" disabled={!!busy}
+            aria-label={`นำ ${file.name} ออก`}
+            onClick={() => setMediaFiles((files) => files.filter((_, position) => position !== index))}>นำออก</button>
+        </li>)}
+      </ol>}
+      <details open={reelPlan ? true : undefined}>
+        <summary>ตัดตามแผน Master Prompt v2</summary>
+        <label>ไฟล์แผน JSON
+          <input type="file" accept=".json,application/json" disabled={!!busy} onChange={async (event) => {
+            const file = event.currentTarget.files?.[0];
+            event.currentTarget.value = "";
+            if (!file) return;
+            if (file.size > 32_768) {
+              setNotice({ text: "ไฟล์แผน JSON ต้องไม่เกิน 32 KiB", error: true });
+              return;
+            }
+            const input = event.currentTarget;
+            try {
+              const contents = await file.text();
+              if (input.isConnected) setReelPlan(contents);
+            } catch {
+              setNotice({ text: "เปิดไฟล์แผน JSON ไม่ได้", error: true });
+            }
+          }} />
+        </label>
+        <label>แผน Master Prompt v2 (JSON)
+          <textarea rows={7} value={reelPlan} maxLength={32768} disabled={!!busy}
+            onChange={(event) => setReelPlan(event.target.value)} />
+        </label>
+        <p className="muted">ใช้ A1–A12 ตามลำดับไฟล์ด้านบน แผนต้องเริ่มที่ 0 และจบที่ 15 วินาที
+          รองรับภาพนิ่งและช่วงเวลาของคลิป ระบุซับใน subtitle_th เว้นแผนว่างเพื่อแบ่งเวลาอัตโนมัติ</p>
+      </details>
+      <button className="primary" disabled={!!busy || !product?.image_rights_note}>{busy === "render" ? "กำลังเรนเดอร์…" : "สร้างวิดีโอ"}</button>
+    </form>
+  );
+  const videoPicker = (
+    <label>ตัวอย่างที่บันทึกไว้<select value={renderId} onChange={(event) => selectRender(event.target.value)} disabled={!!busy}>
+      <option value="">เลือกวิดีโอ</option>
+      {renders.filter((item) => item.product_id === productId).map((item) => <option key={item.id} value={item.id}>{item.status === "completed" ? "พร้อมดู" : "เรนเดอร์ไม่สำเร็จ"} · {item.id.slice(0, 8)}</option>)}
+    </select></label>
+  );
+
   if (!token) {
     return (
       <main className="entry">
@@ -449,7 +612,7 @@ export default function Studio() {
           <div className="form-card">
             <h2>{mode === "login" ? "เข้าสู่ระบบ" : "สร้างบัญชี"}</h2>
             <p className="muted">ใช้บัญชีสำหรับพื้นที่ทำงานของคุณ</p>
-            <form onSubmit={authenticate}>
+            <form ref={authForm} data-mode={mode} method="post" onSubmit={authenticate}>
               <label>อีเมล<input type="email" name="email" required autoComplete="email" /></label>
               <label>รหัสผ่าน<input type="password" name="password" required minLength={mode === "register" ? 12 : 1} autoComplete={mode === "register" ? "new-password" : "current-password"} /></label>
               <button className="primary" disabled={!!busy}>{busy ? "กำลังดำเนินการ…" : mode === "login" ? "เข้าสู่ระบบ" : "สร้างบัญชี"}</button>
@@ -465,10 +628,11 @@ export default function Studio() {
   }
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
-        <div className="wordmark"><span className="mark">A</span> Affiliate Studio</div>
-        <div className="workspace">
+    <div className="shell variant-a">
+      <header className="sidebar">
+        <a className="wordmark studio-brand" href="#discover"><span className="mark">A</span> Shopee Affiliate Studio</a>
+        <details className="workspace" open={!workspaceId || undefined}>
+          <summary>{workspaces.find((item) => item.id === workspaceId)?.name ?? "พื้นที่ทำงาน"}</summary>
           <label>พื้นที่ทำงาน<select value={workspaceId} disabled={!!busy} onChange={(event) => selectWorkspace(event.target.value)}>
             {!workspaces.length && <option value="">ยังไม่มีพื้นที่ทำงาน</option>}
             {workspaces.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
@@ -480,32 +644,29 @@ export default function Studio() {
               <button className="secondary" disabled={!!busy}>สร้างพื้นที่ทำงาน</button>
             </form>
           </details>
-        </div>
+        </details>
         {workspaceId && <nav aria-label="เมนู Studio">
-          <a href="#discover" aria-current={showingDiscovery ? "location" : undefined}>เลือกสินค้า</a>
-          <a href="#trends" aria-current={showingTrends ? "location" : undefined}>Google Trends</a>
-          <a href="#shopee-offers" aria-current={showingOffers ? "location" : undefined}>คัดสินค้า Shopee</a>
+          <a href="#discover" aria-current={marketActive ? "location" : undefined}>ตลาดสินค้า</a>
           <a href="#affiliate-links" aria-current={showingLinks ? "location" : undefined}>ลิงก์ Affiliate</a>
-          <a href="#storyboards" aria-current={showingStoryboards ? "location" : undefined}>Storyboard</a>
-          {steps.map((step) => <a href={`#${step.anchor}`} key={step.anchor}>{step.title}</a>)}
-          <a href="#purchase-previews" aria-current={showingPurchases ? "location" : undefined}>Reel จากสินค้าที่เคยซื้อ</a>
-          <a href="#affiliate-results" aria-current={showingResults ? "location" : undefined}>ผลลัพธ์ Affiliate</a>
+          <a href="#storyboards" aria-current={productionActive ? "location" : undefined}>งานผลิต</a>
+          <a href="#affiliate-results" aria-current={resultsActive ? "location" : undefined}>ผลลัพธ์</a>
         </nav>}
         <button type="button" className="text-button logout" onClick={logout} disabled={!!busy}>ออกจากระบบ</button>
-      </aside>
+      </header>
       <main className="main">
-        {(!workspaceId || showingWorkspace) && <header className="workspace-header"><h1>สตูดิโอ Reel</h1><span className="mode-tag">โหมดทดสอบ</span></header>}
+        {!workspaceId && <header className="workspace-header"><h1>สตูดิโอ Reel</h1><span className="mode-tag">โหมดทดสอบ</span></header>}
         <div aria-live="polite">{status}</div>
         {!workspaceId && <section className="panel empty"><h2>เริ่มจากสร้างพื้นที่ทำงาน</h2><p>เพิ่มชื่อพื้นที่ทำงานเพื่อเริ่มจัดเก็บสินค้าและวิดีโอ</p></section>}
         {workspaceId && <>
+          {!!contextualTools.length && <details className="studio-toolbox">
+            <summary>{marketActive ? "เครื่องมือสินค้า" : productionActive ? "เครื่องมือสำหรับงานผลิต" : "เครื่องมือรายงานและตรวจโพสต์"}</summary>
+            <ul>{contextualTools.map(({ anchor: destination, title }) => <li key={destination}>
+              <a href={`#${destination}`} aria-current={anchor === destination ? "page" : undefined}>{title}</a>
+            </li>)}</ul>
+          </details>}
           {showingDiscovery && <ProductDiscovery key={`discover/${workspaceId}`} scope={scope} token={token}
-            products={products} request={api} onChoose={chooseProduct} />}
-          {(showingTrends || showingOffers || showingLinks) && <nav id="affiliate-journey" className="affiliate-journey"
-            aria-label="ขั้นตอนเลือกสินค้าและบันทึกลิงก์">
-            <a href="#trends" aria-current={showingTrends ? "step" : undefined}>1. เลือกเทรนด์</a>
-            <a href="#shopee-offers" aria-current={showingOffers ? "step" : undefined}>2. คัดสินค้า</a>
-            <a href="#affiliate-links" aria-current={showingLinks ? "step" : undefined}>3. ลิงก์ Affiliate</a>
-          </nav>}
+            products={products} request={api} onChoose={chooseProduct} linkRevision={linkRevision}
+            recentWork={recentStoryboard ? { name: recentStoryboard.product_name, reviewed: !!recentStoryboard.approved_scenes.length } : undefined} />}
           <div hidden={!showingPurchases}>
             <PurchasePreviews key={workspaceId} active={showingPurchases} scope={scope} token={token} request={api} />
           </div>
@@ -514,18 +675,16 @@ export default function Studio() {
               token={token} onProduct={openReportProduct} request={api}
               setup={showingLinks && affiliateJourney.offer && <AffiliateLinkSetup
                 key={`${workspaceId}/${affiliateJourney.offer.id}`}
-                autoStart={affiliateAutoStart} onAutoStartHandled={() => setAffiliateAutoStart(false)}
                 trend={affiliateJourney.trend} offer={affiliateJourney.offer}
                 scope={scope} token={token} request={api} products={products}
                 onBusy={(saving) => setBusy(saving ? "affiliate-journey" : "")}
-                onSave={(item) => {
-                  setProducts((current) => current.some((product) => product.id === item.id) ? current : [item, ...current]);
+                onSave={saveWorkflowProduct}
+                onContinue={(item, link) => {
                   selectProduct(item.id);
-                  setLinkRevision((revision) => revision + 1);
-                }}
-                onContinue={(item) => {
-                  selectProduct(item.id);
-                  openStoryboard("catalog", item.id, item.name);
+                  setProductFlow({
+                    product: { selection: { kind: "catalog", id: item.id, name: item.name } },
+                    initialAffiliate: { item, link },
+                  });
                 }} />} />
           </div>
           <div hidden={!showingResults}>
@@ -535,7 +694,7 @@ export default function Studio() {
           <div hidden={!showingOffers}>
             <ShopeeOffers key={workspaceId} active={showingOffers} scope={scope} token={token} request={api}
               trend={affiliateJourney.trend} onStoryboard={(id, name) => openStoryboard("offer", id, name)}
-              onChooseOffer={(id, name) => chooseProduct({ kind: "offer", id, name }, affiliateJourney.trend)} />
+              onChooseOffer={(id, name) => chooseProduct({ selection: { kind: "offer", id, name } }, affiliateJourney.trend)} />
           </div>
           {showingStoryboards && <Storyboards key={workspaceId} scope={scope} token={token} request={api}
             source={boardDraft?.workspace === workspaceId ? boardDraft : null} onCloseDraft={() => setBoardDraft(null)} />}
@@ -546,7 +705,7 @@ export default function Studio() {
               onStoryboard={(id, name) => openStoryboard("catalog", id, name)} request={api} />
           </div>
           <div className="studio-view" hidden={!showingWorkspace}>
-          <section className="panel" id="products">
+          <section className="panel" id="products" hidden={anchor !== "products"}>
             <div className="panel-head"><h2 tabIndex={-1}>คลังสินค้า</h2><span>{products.length} รายการ</span></div>
             <div className="columns">
               <form key={editingId || "new"} onSubmit={saveProduct}>
@@ -583,7 +742,7 @@ export default function Studio() {
               </div>
             </div>
           </section>
-          {product && <section className="panel" aria-label="ลิงก์ Affiliate ตามช่องทาง">
+          {product && <section className="panel" hidden={anchor !== "products"} aria-label="ลิงก์ Affiliate ตามช่องทาง">
             <div className="panel-head"><h2>ลิงก์ Affiliate ตามช่องทาง</h2></div>
             <div className="columns">
               <div className="column">
@@ -608,102 +767,23 @@ export default function Studio() {
               </div>
             </div>
           </section>}
-          <section className="panel" id="video">
+          <section className="panel" id="video" hidden={anchor !== "video"}>
             <div className="panel-head"><h2 tabIndex={-1}>วิดีโอแนวตั้ง</h2><span>9:16 · 15 วินาที</span></div>
             <div className="columns">
               <div className="column">
-                <form key={productId} onSubmit={createVideo}>
-                  <h3>สร้าง Reel จากฟุตเทจและภาพสินค้า</h3>
-                  <p className="muted">{product ? product.name : "เลือกสินค้าในคลังสินค้าก่อน"}</p>
-                  {draft && !reelPlan.trim() && <fieldset disabled={!!busy} className="reel-script">
-                    <legend>สคริปต์ Reel</legend>
-                    <p className="muted">{draft.source === "trend" ? "เทรนด์" : "คำค้น"} · {draft.query}</p>
-                    <p className="muted">แก้ข้อความที่จะขึ้นบนจอได้ ฉากละไม่เกิน 3 บรรทัด</p>
-                    {draft.scenes.map((text, index) => <label key={sceneLabels[index]}>{sceneLabels[index]}
-                      <textarea name="scene_texts" required maxLength={120} rows={2} value={text}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          setDraft({ ...draft, scenes: draft.scenes.map((scene, i) => i === index ? value : scene) });
-                        }} />
-                    </label>)}
-                    <button className="text-button" type="button" onClick={() => setDraft(null)}>นำสคริปต์ออก</button>
-                  </fieldset>}
-                  {product && !product.image_rights_note && <p className="muted">บันทึกสิทธิ์ใช้ฟุตเทจและภาพในคลังสินค้าก่อนเรนเดอร์</p>}
-                  <label>เพิ่มคลิปหรือภาพสินค้า
-                    <input type="file" accept=".mp4,.mov,image/jpeg,image/png,image/webp" multiple disabled={!!busy}
-                      onChange={(event) => {
-                        const next = [...mediaFiles, ...Array.from(event.currentTarget.files ?? [])];
-                        event.currentTarget.value = "";
-                        if (next.length > 12 || next.reduce((size, file) => size + file.size, 0) > 64 * 1024 * 1024) {
-                          setNotice({ text: "เพิ่มได้ไม่เกิน 12 ไฟล์ รวมไม่เกิน 64 MiB", error: true });
-                          return;
-                        }
-                        setMediaFiles(next);
-                        setNotice({ text: "", error: false });
-                      }} />
-                  </label>
-                  <p className="muted">ใช้คลิป MP4/MOV ร่วมกับภาพได้ แนะนำให้เปิดด้วยคลิปที่เห็นสินค้าชัด
-                    ถ้าใช้ภาพอย่างเดียวให้เลือก 4–12 ภาพ ถ้าใช้คลิปอย่างเดียวให้มีฟุตเทจรวมอย่างน้อย 15 วินาที
-                    ตัวอย่างไม่มีเสียงจากคลิปต้นฉบับ</p>
-                  {mediaFiles.length > 0 && <ol className="reel-media" aria-label="ลำดับไฟล์ใน Reel">
-                    {mediaFiles.map((file, index) => <li key={index}>
-                      <span><strong>A{index + 1}</strong> · {file.name}</span>
-                      {[-1, 1].map((direction) => <button key={direction} type="button" className="text-button"
-                        disabled={!!busy || index + direction < 0 || index + direction >= mediaFiles.length}
-                        aria-label={`${direction < 0 ? "เลื่อนขึ้น" : "เลื่อนลง"} ${file.name}`}
-                        onClick={() => {
-                          const target = index + direction;
-                          setMediaFiles((files) => {
-                            const next = [...files];
-                            [next[index], next[target]] = [next[target], next[index]];
-                            return next;
-                          });
-                        }}>{direction < 0 ? "ขึ้น" : "ลง"}</button>)}
-                      <button type="button" className="text-button" disabled={!!busy}
-                        aria-label={`นำ ${file.name} ออก`}
-                        onClick={() => setMediaFiles((files) => files.filter((_, position) => position !== index))}>นำออก</button>
-                    </li>)}
-                  </ol>}
-                  <details open={reelPlan ? true : undefined}>
-                    <summary>ตัดตามแผน Master Prompt v2</summary>
-                    <label>ไฟล์แผน JSON
-                      <input type="file" accept=".json,application/json" disabled={!!busy} onChange={async (event) => {
-                        const file = event.currentTarget.files?.[0];
-                        event.currentTarget.value = "";
-                        if (!file) return;
-                        if (file.size > 32_768) {
-                          setNotice({ text: "ไฟล์แผน JSON ต้องไม่เกิน 32 KiB", error: true });
-                          return;
-                        }
-                        const input = event.currentTarget;
-                        try {
-                          const contents = await file.text();
-                          if (input.isConnected) setReelPlan(contents);
-                        } catch {
-                          setNotice({ text: "เปิดไฟล์แผน JSON ไม่ได้", error: true });
-                        }
-                      }} />
-                    </label>
-                    <label>แผน Master Prompt v2 (JSON)
-                      <textarea rows={7} value={reelPlan} maxLength={32768} disabled={!!busy}
-                        onChange={(event) => setReelPlan(event.target.value)} />
-                    </label>
-                    <p className="muted">ใช้ A1–A12 ตามลำดับไฟล์ด้านบน แผนต้องเริ่มที่ 0 และจบที่ 15 วินาที
-                      รองรับภาพนิ่งและช่วงเวลาของคลิป ระบุซับใน subtitle_th เว้นแผนว่างเพื่อแบ่งเวลาอัตโนมัติ</p>
-                  </details>
-                  <button className="primary" disabled={!!busy || !product?.image_rights_note}>{busy === "render" ? "กำลังเรนเดอร์…" : "สร้างวิดีโอ"}</button>
-                </form>
-                <label>ตัวอย่างที่บันทึกไว้<select value={renderId} onChange={(event) => selectRender(event.target.value)} disabled={!!busy}>
-                  <option value="">เลือกวิดีโอ</option>
-                  {renders.filter((item) => item.product_id === productId).map((item) => <option key={item.id} value={item.id}>{item.status === "completed" ? "พร้อมดู" : "เรนเดอร์ไม่สำเร็จ"} · {item.id.slice(0, 8)}</option>)}
+                <label>สินค้าสำหรับวิดีโอ<select value={productId} disabled={!!busy}
+                  onChange={(event) => selectProduct(event.target.value)}>
+                  <option value="">เลือกสินค้า</option>
+                  {products.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                 </select></label>
+                {!productFlow && <>{videoEditor}{videoPicker}</>}
               </div>
               <div className="preview">
                 {video ? <video key={video} src={video} controls playsInline /> : <div className="preview-empty"><span aria-hidden="true">▶</span><p>ตัวอย่าง Reel</p></div>}
               </div>
             </div>
           </section>
-          <section className="panel" id="simulation">
+          <section className="panel" id="simulation" hidden={anchor !== "simulation"}>
             <div className="panel-head"><h2>ทดสอบเผยแพร่</h2><span>Meta จำลอง</span></div>
             <div className="columns">
               <form onSubmit={simulate}>
@@ -720,20 +800,29 @@ export default function Studio() {
               </div>
             </div>
           </section>
-          <MetaPublishing key={`meta/${workspaceId}`} request={api} scope={scope} token={token}
+          {["simulation", "meta-publishing", "tiktok-publishing"].includes(anchor) && <div className="panel studio-publish-source">
+            {videoPicker}
+            <a href="#video">เลือกสินค้าและจัดการวิดีโอ</a>
+          </div>}
+          <div hidden={anchor !== "meta-publishing"}><MetaPublishing key={`meta/${workspaceId}`} request={api} scope={scope} token={token}
             renderId={renderId} videoUrl={video} productName={product?.name ?? ""}
             productUrl={product?.source_url} facebookAffiliateUrl={facebookAffiliate}
-            affiliateUrl={facebookAffiliate ?? product?.affiliate_url} />
-          <TikTokPublishing key={`${workspaceId}/${productId}/${renderId}`}
-            renderId={renderId} videoUrl={video} productName={product?.name ?? ""} />
-          <Campaigns key={workspaceId} scope={scope} token={token} active={anchor === "campaigns"}
+            affiliateUrl={facebookAffiliate ?? product?.affiliate_url} /></div>
+          <div hidden={anchor !== "tiktok-publishing"}><TikTokPublishing key={`${workspaceId}/${productId}/${renderId}`}
+            renderId={renderId} videoUrl={video} productName={product?.name ?? ""} /></div>
+          <div hidden={anchor !== "campaigns"}><Campaigns key={workspaceId} scope={scope} token={token} active={anchor === "campaigns"}
             canManage={workspaces.find((workspace) => workspace.id === workspaceId)?.role === "owner"}
             renders={renders.filter((item) => item.status === "completed").map((item) => ({
               id: item.id, name: products.find((candidate) => candidate.id === item.product_id)?.name ?? item.id,
-            }))} request={api} />
+            }))} request={api} /></div>
           </div>
         </>}
       </main>
+      {productFlow && <ProductWorkflow selection={productFlow.product} initialAffiliate={productFlow.initialAffiliate}
+        scope={scope} token={token} products={products} request={api} onSave={saveWorkflowProduct}
+        onContinue={(item) => { if (item.id !== productId) selectProduct(item.id); }}
+        onClose={() => setProductFlow(undefined)} videoEditor={videoEditor} videoPicker={videoPicker}
+        video={video} renderId={renderId} notice={status} />}
     </div>
   );
 }

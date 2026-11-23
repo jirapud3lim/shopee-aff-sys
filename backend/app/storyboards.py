@@ -2,20 +2,21 @@
 
 import os
 from datetime import UTC, datetime
+from hashlib import sha256
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Annotated, Literal
+from typing import Annotated, BinaryIO, Literal
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from PIL import Image
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy.orm import Session
 
 from .auth import WorkspaceContext, require_workspace
 from .db import get_db
-from .products import Product
+from .products import ChannelLink, ChannelLinkOut, Product
 from .renders import render_root
 from .shopee_offers import ShopeeOffer
 
@@ -39,7 +40,9 @@ class Plan(BaseModel):
     source_id: str = Field(min_length=1, max_length=36)
     variant: str = Field(min_length=1, max_length=180)
     verified_details: str = Field(min_length=1, max_length=600)
+    creative_prompt: str = Field(default="", max_length=4000)
     scenes: list[Scene] = Field(min_length=1, max_length=12)
+    affiliate: ChannelLinkOut | None = None
 
 
 class Storyboard(Plan):
@@ -47,6 +50,18 @@ class Storyboard(Plan):
     product_name: str
     created_at: datetime
     files: dict[Asset, str]
+    review_version: str | None = None
+    approved_scenes: list[int] = Field(default_factory=list)
+
+
+class Approval(BaseModel):
+    version: str = Field(pattern=r"^[a-f0-9]{64}$")
+    scenes: list[int] = Field(max_length=12)
+
+
+class ApprovalRecord(Approval):
+    reviewed_by: str
+    reviewed_at: datetime
 
 
 def workspace_path(context: WorkspaceContext) -> Path:
@@ -58,12 +73,23 @@ def load_board(folder: Path) -> Storyboard:
     if not manifest.is_file():
         raise HTTPException(404, "ไม่พบ Storyboard")
     board = Storyboard.model_validate_json(manifest.read_bytes())
-    if (folder / "board.img").is_file():
-        board.files["board"] = "storyboard-from-flow" + image_suffix(folder / "board.img")
+    image = folder / "board.img"
+    if image.is_file():
+        with image.open("rb") as stream:
+            board.review_version = sha256(stream.read()).hexdigest()
+            stream.seek(0)
+            suffix = image_suffix(stream)
+        board.files["board"] = "storyboard-from-flow" + suffix
+        try:
+            approval = Approval.model_validate_json((folder / "approval.json").read_bytes())
+        except FileNotFoundError:
+            return board
+        if approval.version == board.review_version:
+            board.approved_scenes = approval.scenes
     return board
 
 
-def image_suffix(path: Path) -> str:
+def image_suffix(path: Path | BinaryIO) -> str:
     with Image.open(path, formats=["JPEG", "PNG", "WEBP"]) as image:
         return {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}[image.format]
 
@@ -112,6 +138,17 @@ def create_storyboard(
     if selected is None or selected.workspace_id != workspace:
         raise HTTPException(404, "ไม่พบสินค้าในพื้นที่ทำงานนี้")
 
+    if data.affiliate is not None:
+        if not isinstance(selected, Product):
+            raise HTTPException(422, "บันทึกสินค้าและลิงก์ Affiliate ก่อนเตรียม Storyboard")
+        channel = data.affiliate.channel
+        link = db.get(ChannelLink, (workspace, selected.id, channel))
+        expected = (link.affiliate_url, link.sub_id) if link else (
+            selected.affiliate_url if channel == "facebook" else None, None
+        )
+        if expected != (str(data.affiliate.affiliate_url), data.affiliate.sub_id):
+            raise HTTPException(409, "ลิงก์ของสินค้าหรือช่องทางเปลี่ยนแล้ว กรุณาเลือกลิงก์ใหม่")
+
     root = workspace_path(context)
     root.mkdir(parents=True, exist_ok=True)
     storyboard_id = uuid4()
@@ -142,13 +179,41 @@ def import_board(storyboard_id: UUID, context: Context, image: Annotated[UploadF
     return load_board(folder)
 
 
-@router.get("/{storyboard_id}/files/{asset}")
-def get_asset(storyboard_id: UUID, asset: Asset, context: Context):
+@router.put("/{storyboard_id}/approval", response_model=Storyboard)
+def approve_board(storyboard_id: UUID, approval: Approval, context: Context):
     folder = workspace_path(context) / str(storyboard_id)
-    name = load_board(folder).files.get(asset)
+    board = load_board(folder)
+    if board.review_version != approval.version:
+        raise HTTPException(409, "ภาพ Storyboard เปลี่ยนแล้ว กรุณาเปิดภาพล่าสุดเพื่อตรวจใหม่")
+    if any(not 1 <= scene <= len(board.scenes) for scene in approval.scenes):
+        raise HTTPException(422, "หมายเลขฉากต้องตรงกับแผน Storyboard")
+    record = ApprovalRecord(
+        version=approval.version, scenes=sorted(set(approval.scenes)),
+        reviewed_by=context.user_id, reviewed_at=datetime.now(UTC),
+    )
+    with TemporaryDirectory(dir=folder) as temp:
+        staged = Path(temp) / "approval.json"
+        staged.write_text(record.model_dump_json(), encoding="utf-8")
+        os.replace(staged, folder / "approval.json")
+    return load_board(folder)
+
+
+@router.get("/{storyboard_id}/files/{asset}")
+def get_asset(storyboard_id: UUID, asset: Asset, context: Context, version: str | None = None):
+    folder = workspace_path(context) / str(storyboard_id)
+    board = load_board(folder)
+    name = board.files.get(asset)
     if not name:
         raise HTTPException(404, "ไม่พบไฟล์ภาพ")
+    headers = {"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"}
+    if asset == "board" and version is not None:
+        if board.review_version != version:
+            raise HTTPException(409, "ภาพ Storyboard มีเวอร์ชันใหม่")
+        data = (folder / "board.img").read_bytes()
+        if sha256(data).hexdigest() != version:
+            raise HTTPException(409, "ภาพ Storyboard มีเวอร์ชันใหม่")
+        media_type = {".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+        return Response(data, media_type=media_type[Path(name).suffix], headers=headers)
     return FileResponse(
-        folder / f"{asset}.img", filename=name, content_disposition_type="inline",
-        headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"},
+        folder / f"{asset}.img", filename=name, content_disposition_type="inline", headers=headers,
     )

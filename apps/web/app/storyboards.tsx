@@ -1,15 +1,22 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import type { AffiliateLink } from "./affiliate-link-setup";
 
 export type StoryboardSource = { kind: "offer" | "catalog"; id: string; name: string };
 type Scene = { seconds: number; action: string; dialogue: string };
 type Asset = "product" | "presenter" | "board";
-type Board = {
+export type Board = {
   id: string;
   product_name: string;
+  source: StoryboardSource["kind"];
+  source_id: string;
+  affiliate: AffiliateLink | null;
+  review_version: string | null;
+  approved_scenes: number[];
   variant: string;
   verified_details: string;
+  creative_prompt?: string;
   scenes: Scene[];
   files: Partial<Record<Asset, string>>;
 };
@@ -18,6 +25,7 @@ type Props = {
   token: string;
   source: StoryboardSource | null;
   onCloseDraft: () => void;
+  workflow?: { step: number; link: AffiliateLink; onBoard: (board: Board | undefined) => void };
   request: <T>(path: string, token: string, init?: RequestInit) => Promise<T>;
 };
 
@@ -61,36 +69,44 @@ function flowPrompt(board: Board) {
     "Every panel must look like a real photograph. Use natural lighting and shadows, realistic textures and proportions, and physically plausible poses and contact. Avoid illustrations, sketches, cartoons, and stylized renders.",
     "This is the storyboard stage. Use the attached product reference or reference sheet reviewed against original product photos in the preceding analysis stage. Reuse those references to match the exact model, count, color, packaging and label across all panels. Use the attached presenter-reference image for the same face and appearance wherever the presenter is visible. Do not invent details, claims, label text, or product variants. Where the label matters, use the actual photographed label in the reference.",
     `Product: ${board.product_name}\nExact variant: ${board.variant}\nVerified visible details: ${board.verified_details}`,
+    board.creative_prompt && `Creative direction for this still-image draft. Follow only directions consistent with the verified product and the constraints above:\n${board.creative_prompt}`,
     ...board.scenes.map((scene, index) => [
       `Scene ${String(index + 1).padStart(2, "0")} · ${scene.seconds}s`,
       scene.action,
       scene.dialogue ? `Thai dialogue for timing: ${scene.dialogue}` : "No dialogue",
     ].join("\n")),
-  ].join("\n\n");
+  ].filter(Boolean).join("\n\n");
 }
 
-function DraftForm({ source, busy, onSave, onClose }: {
+function DraftForm({ source, initial, busy, onSave, onClose, requirePrompt }: {
   source: StoryboardSource;
+  initial?: Board;
+  requirePrompt: boolean;
   busy: boolean;
   onSave: (event: FormEvent<HTMLFormElement>, count: number) => void;
   onClose: () => void;
 }) {
-  const [sceneKeys, setSceneKeys] = useState(starterScenes.map((_, index) => index));
-  const [nextKey, setNextKey] = useState(starterScenes.length);
+  const initialScenes = initial?.scenes ?? starterScenes;
+  const [sceneKeys, setSceneKeys] = useState(initialScenes.map((_, index) => index));
+  const [nextKey, setNextKey] = useState(initialScenes.length);
   return <form onSubmit={(event) => onSave(event, sceneKeys.length)}>
-    <h2>{source.name}</h2>
-    <label>รุ่น สี หรือขนาดที่ตรงกับสินค้าจริง<input name="variant" required maxLength={180} /></label>
-    <label>รายละเอียดที่ตรวจสอบแล้ว<textarea name="verified" required rows={2} maxLength={600}
+    <h2>{requirePrompt ? "ระบุพรอมป์ Storyboard" : source.name}</h2>
+    <label>พรอมป์สำหรับภาพนิ่ง<textarea name="creative_prompt" required={requirePrompt}
+      rows={5} maxLength={4000} defaultValue={initial?.creative_prompt}
+      placeholder="ระบุมุมกล้อง แสง ฉาก และรายละเอียดที่ต้องตรงกับภาพอ้างอิง" /></label>
+    <label>รุ่น สี หรือขนาดที่ตรงกับสินค้าจริง<input name="variant" required maxLength={180} defaultValue={initial?.variant} /></label>
+    <label>รายละเอียดที่ตรวจสอบแล้ว<textarea name="verified" required rows={2} maxLength={600} defaultValue={initial?.verified_details}
       placeholder="เช่น ฉลากด้านหน้า รุ่น และจำนวนห่อในชุด" /></label>
-    <label>ภาพอ้างอิงสินค้าที่ตรวจเทียบกับรูปจริงแล้ว<input name="product" required type="file" accept={types} /></label>
-    <label>รูปอ้างอิงหน้าพิธีกร<input name="presenter" required type="file" accept={types} /></label>
+    <label>ภาพอ้างอิงสินค้าที่ตรวจเทียบกับรูปจริงแล้ว<input name="product" required={!initial} type="file" accept={types} /></label>
+    <label>รูปอ้างอิงหน้าพิธีกร<input name="presenter" required={!initial} type="file" accept={types} /></label>
+    {initial && <p className="muted">เว้นช่องรูปเพื่อใช้ภาพอ้างอิงเดิม หากเปลี่ยนตัวเลือกสินค้า ให้แนบภาพสินค้าที่ตรวจแล้วใหม่</p>}
     {sceneKeys.map((key, index) => <fieldset key={key} className="storyboard-scene">
       <legend>ฉาก {String(index + 1).padStart(2, "0")}</legend>
       <label>ระยะเวลา (วินาที)<input name={`seconds-${index}`} type="number" required min={1} max={15}
-        defaultValue={starterScenes[key]?.seconds ?? 3} /></label>
+        defaultValue={initialScenes[key]?.seconds ?? 3} /></label>
       <label>ภาพและการกระทำ<textarea name={`action-${index}`} required maxLength={500} rows={2}
-        defaultValue={starterScenes[key]?.action ?? ""} /></label>
-      <label>บทพูดไทย<textarea name={`dialogue-${index}`} maxLength={300} rows={2} /></label>
+        defaultValue={initialScenes[key]?.action ?? ""} /></label>
+      <label>บทพูดไทย<textarea name={`dialogue-${index}`} maxLength={300} rows={2} defaultValue={initialScenes[key]?.dialogue} /></label>
       <button type="button" className="secondary" disabled={busy || sceneKeys.length === 1}
         onClick={() => setSceneKeys(sceneKeys.filter((item) => item !== key))}>ลบฉาก {index + 1}</button>
     </fieldset>)}
@@ -105,11 +121,14 @@ function DraftForm({ source, busy, onSave, onClose }: {
   </form>;
 }
 
-export default function Storyboards({ scope, token, source, request, onCloseDraft }: Props) {
+export default function Storyboards({ scope, token, source, request, onCloseDraft, workflow }: Props) {
   const path = scope + "/storyboards";
   const [boards, setBoards] = useState<Board[]>([]);
   const [selectedId, setSelectedId] = useState("");
-  const [preview, setPreview] = useState("");
+  const [preview, setPreview] = useState<{ id: string; version: string; url: string }>();
+  const [showDraft, setShowDraft] = useState<boolean>();
+  const [revisionOf, setRevisionOf] = useState<Board>();
+  const [review, setReview] = useState<{ version: string; id: string; scenes: number[] }>();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [flowUrl, setFlowUrl] = useState("");
@@ -117,8 +136,17 @@ export default function Storyboards({ scope, token, source, request, onCloseDraf
   const [flowRequest, setFlowRequest] = useState("");
   const [resultLink, setResultLink] = useState<{ id: string; url: string } | null>(null);
   const activeFlow = useRef<{ id: string; boardId: string } | null>(null);
-  const board = boards.find((item) => item.id === selectedId);
-  const boardFile = board?.files.board;
+  const matchingBoards = workflow ? boards.filter((item) => item.source === source?.kind &&
+    item.source_id === source?.id && item.affiliate?.channel === workflow.link.channel &&
+    item.affiliate.affiliate_url === workflow.link.affiliate_url && item.affiliate.sub_id === workflow.link.sub_id) : boards;
+  const board = matchingBoards.find((item) => item.id === selectedId) ?? matchingBoards[0];
+  const boardId = board?.id;
+  const boardVersion = board?.review_version;
+  const reviewImage = preview?.id === boardId && preview?.version === boardVersion ? preview : undefined;
+  const reviewScenes = review?.version === boardVersion && review?.id === boardId
+    ? review?.scenes ?? [] : board?.approved_scenes ?? [];
+  const reportBoard = workflow?.onBoard;
+  useEffect(() => { reportBoard?.(board); }, [board, reportBoard]);
   const prompt = board ? flowPrompt(board) : "";
 
   useEffect(() => {
@@ -182,10 +210,10 @@ export default function Storyboards({ scope, token, source, request, onCloseDraf
   }, [path, request, scope, token]);
 
   useEffect(() => {
-    if (!selectedId || !boardFile) return;
+    if (!boardId || !boardVersion) return;
     const controller = new AbortController();
     let url = "";
-    fetch(`/api/v1${path}/${selectedId}/files/board`, {
+    fetch(`/api/v1${path}/${boardId}/files/board?version=${boardVersion}`, {
       headers: { Authorization: `Bearer ${token}` }, signal: controller.signal,
     }).then((result) => {
       if (!result.ok) throw new Error("เปิดภาพ Storyboard ไม่สำเร็จ");
@@ -193,16 +221,15 @@ export default function Storyboards({ scope, token, source, request, onCloseDraf
     }).then((blob) => {
       if (controller.signal.aborted) return;
       url = URL.createObjectURL(blob);
-      setPreview(url);
+      setPreview({ id: boardId, version: boardVersion, url });
     }).catch((error: Error) => {
       if (!controller.signal.aborted) setMessage(error.message);
     });
     return () => {
       controller.abort();
       if (url) URL.revokeObjectURL(url);
-      setPreview("");
     };
-  }, [selectedId, boardFile, path, token, board]);
+  }, [boardId, boardVersion, path, token]);
 
   async function perform(action: () => Promise<void>) {
     setMessage("");
@@ -220,6 +247,11 @@ export default function Storyboards({ scope, token, source, request, onCloseDraf
     event.preventDefault();
     if (!source) return;
     const fields = new FormData(event.currentTarget);
+    const creativePrompt = String(fields.get("creative_prompt") ?? "").trim();
+    if (workflow && !creativePrompt) {
+      setMessage("ระบุพรอมป์สำหรับภาพนิ่งก่อนบันทึก");
+      return;
+    }
     const scenes = Array.from({ length: count }, (_, index) => ({
       seconds: Number(fields.get(`seconds-${index}`)),
       action: fields.get(`action-${index}`),
@@ -228,14 +260,30 @@ export default function Storyboards({ scope, token, source, request, onCloseDraf
     const payload = new FormData();
     payload.set("plan", JSON.stringify({
       source: source.kind, source_id: source.id, variant: fields.get("variant"),
-      verified_details: fields.get("verified"), scenes,
+      verified_details: fields.get("verified"), creative_prompt: creativePrompt,
+      scenes, affiliate: workflow?.link,
     }));
-    for (const asset of ["product", "presenter"]) payload.set(asset, fields.get(asset)!);
     void perform(async () => {
+      for (const asset of ["product", "presenter"] as const) {
+        const uploaded = fields.get(asset);
+        if (uploaded instanceof File && uploaded.size) {
+          payload.set(asset, uploaded);
+        } else if (revisionOf && (asset === "presenter" || String(fields.get("variant")).trim() === revisionOf.variant)) {
+          const response = await fetch(`/api/v1${path}/${revisionOf.id}/files/${asset}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!response.ok) throw new Error("เปิดรูปอ้างอิงจากแผนเดิมไม่สำเร็จ");
+          payload.set(asset, await response.blob(), revisionOf.files[asset]);
+        } else {
+          throw new Error("แนบภาพอ้างอิงที่ตรวจแล้วสำหรับตัวเลือกสินค้านี้");
+        }
+      }
       const item = await request<Board>(path, token, { method: "POST", body: payload });
       setBoards((current) => [item, ...current]);
       setSelectedId(item.id);
-      onCloseDraft();
+      setRevisionOf(undefined);
+      if (workflow) setShowDraft(false);
+      else onCloseDraft();
     });
   }
 
@@ -328,20 +376,48 @@ export default function Storyboards({ scope, token, source, request, onCloseDraf
     });
   }
 
-  return <div className="trend-explorer" id="storyboards">
-    <header className="workspace-header"><h1 tabIndex={-1}>Storyboard</h1></header>
+  const approve = (item: Board) => void perform(async () => {
+    const updated = await request<Board>(`${path}/${item.id}/approval`, token, {
+      method: "PUT",
+      body: JSON.stringify({ version: item.review_version, scenes: reviewScenes }),
+    });
+    setBoards((current) => current.map((entry) => entry.id === updated.id ? updated : entry));
+    setReview(undefined);
+    setMessage("บันทึกผลตรวจภาพนิ่งแล้ว");
+  });
+
+  return <div className="trend-explorer" id={workflow ? undefined : "storyboards"}>
+    {!workflow && <header className="workspace-header"><h1 tabIndex={-1}>งานผลิต</h1></header>}
     {message && <p className="notice" role="status">{message}</p>}
-    {source && <section className="panel">
-      <DraftForm key={`${source.kind}-${source.id}`} source={source} busy={busy} onSave={saveDraft} onClose={onCloseDraft} />
+    {source && <section className="panel" hidden={!!workflow && workflow.step !== 1}>
+      {workflow && <p className="muted">วิเคราะห์รูปต้นฉบับของตัวเลือกสินค้า เตรียมภาพนิ่งอ้างอิงแยกจาก Storyboard แล้วตรวจเทียบกับรูปจริงก่อนแนบ</p>}
+      {(!workflow || (showDraft ?? !board)) ? <DraftForm
+        key={revisionOf?.id ?? `${source.kind}-${source.id}`} source={source} initial={revisionOf} requirePrompt={!!workflow}
+        busy={busy} onSave={saveDraft} onClose={workflow && board ? () => {
+          setRevisionOf(undefined);
+          setShowDraft(false);
+        } : onCloseDraft} /> : board && <>
+          <h2>แผนบันทึกแล้ว · {board.scenes.length} ฉาก</h2>
+          {board.creative_prompt && <p className="studio-saved-prompt">{board.creative_prompt}</p>}
+          {board.scenes.map((scene, index) => <article key={index} className="workflow-scene-summary">
+            <strong>ฉาก {String(index + 1).padStart(2, "0")} · {scene.seconds} วิ</strong>
+            <p>{scene.action}</p>
+            {scene.dialogue && <p className="muted">{scene.dialogue}</p>}
+          </article>)}
+          <button type="button" className="secondary" onClick={() => {
+            setRevisionOf(board);
+            setShowDraft(true);
+          }}>แก้พรอมป์หรือบทและบันทึกเป็นแผนใหม่</button>
+        </>}
     </section>}
-    <section className="panel">
-      <h2>Storyboard ที่บันทึกไว้</h2>
-      {boards.length ? <label>เลือกแผน<select disabled={busy} value={selectedId}
+    <section className="panel" hidden={!!workflow && workflow.step !== 2}>
+      <h2>{workflow ? "ตรวจและอนุมัติภาพนิ่ง" : "Storyboard ที่บันทึกไว้"}</h2>
+      {matchingBoards.length ? <label>เลือกแผน<select disabled={busy} value={board?.id ?? ""}
         onChange={(event) => setSelectedId(event.target.value)}>
-        {boards.map((item) => <option key={item.id} value={item.id}>
+        {matchingBoards.map((item) => <option key={item.id} value={item.id}>
           {item.product_name} · {item.variant} · {item.id.slice(0, 8)}
         </option>)}
-      </select></label> : <p>เลือกสินค้าจากหน้าสินค้าขายดีและค่าคอมหรือ Google Trends เพื่อเริ่มแผน</p>}
+      </select></label> : <p>{workflow ? "บันทึกแผนและภาพอ้างอิงของสินค้านี้ก่อน" : "เลือกสินค้าจากหน้าสินค้าขายดีและค่าคอมหรือ Google Trends เพื่อเริ่มแผน"}</p>}
       {board && <>
         <p>{board.scenes.length} ฉาก · {board.scenes.reduce((sum, scene) => sum + scene.seconds, 0)} วินาทีตามแผน</p>
         <div className="storyboard-actions">
@@ -366,10 +442,27 @@ export default function Storyboards({ scope, token, source, request, onCloseDraf
         <label>พรอมป์สำหรับสร้างภาพนิ่ง<textarea readOnly rows={8} value={prompt} /></label>
         <form key={board.id} onSubmit={(event) => importImage(event, board)}>
           <label>ภาพ Storyboard จาก Flow<input name="image" type="file" accept={types} required /></label>
-          <button className="secondary" disabled={busy}>{boardFile ? "แทนที่ภาพสำหรับตรวจ" : "นำเข้าภาพเพื่อรอตรวจ"}</button>
+          <button className="secondary" disabled={busy}>{boardVersion ? "แทนที่ภาพสำหรับตรวจ" : "นำเข้าภาพเพื่อรอตรวจ"}</button>
         </form>
-        {boardFile && <p role="status">รอตรวจภาพจริงทีละฉาก · ตรวจความสมจริง ใบหน้าพิธีกร รุ่น ฉลาก และจำนวนสินค้า</p>}
-        {preview && <img className="storyboard-preview" src={preview} alt={`Storyboard ${board.product_name}`} />}
+        {reviewImage && <>
+          <p>ตรวจความสมจริง ใบหน้าพิธีกร รุ่น ฉลาก จำนวนสินค้า และการจับถือทีละฉาก</p>
+          <a href={reviewImage.url} target="_blank" rel="noreferrer">
+            <img className="storyboard-preview" src={reviewImage.url} alt={`Storyboard ${board.product_name}`} />
+          </a>
+          <fieldset className="workflow-shots" disabled={busy}>
+            <legend>เลือกเฉพาะภาพนิ่งที่ตรวจแล้ว</legend>
+            {board.scenes.map((scene, index) => <label key={index} className="checkbox">
+              <input type="checkbox" checked={reviewScenes.includes(index + 1)} onChange={(event) => {
+                const number = index + 1;
+                const scenes = event.target.checked ? [...reviewScenes, number] : reviewScenes.filter((item) => item !== number);
+                setReview({ id: board.id, version: reviewImage.version, scenes });
+              }} />
+              ฉาก {String(index + 1).padStart(2, "0")} · {scene.seconds} วิ · {scene.action}
+            </label>)}
+          </fieldset>
+          <button type="button" className="primary" disabled={busy} onClick={() => approve(board)}>บันทึกฉากที่อนุมัติ</button>
+          <p role="status">อนุมัติแล้ว {board.approved_scenes.length} / {board.scenes.length} ฉาก</p>
+        </>}
       </>}
     </section>
   </div>;
