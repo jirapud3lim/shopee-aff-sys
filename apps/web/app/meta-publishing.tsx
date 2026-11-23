@@ -35,11 +35,14 @@ type Props = {
   scope: string;
   token: string;
   renderId: string;
-  canPublishRender: boolean;
+  videoUrl: string;
   productName: string;
+  productUrl?: string | null;
+  facebookAffiliateUrl?: string | null;
   affiliateUrl?: string | null;
 };
 
+const affiliateDisclosure = "หากซื้อผ่านลิงก์สินค้า เพจอาจได้รับค่าคอมมิชชัน";
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 const statusLabels: Record<string, string> = {
   published: "เผยแพร่แล้ว", processing: "กำลังประมวลผล", ready: "พร้อม", error: "ผิดพลาด",
@@ -65,7 +68,7 @@ function ReelResult({ reel }: { reel: Reel }) {
 }
 
 export default function MetaPublishing({
-  request, scope, token, renderId, canPublishRender, productName, affiliateUrl,
+  request, scope, token, renderId, videoUrl, productName, productUrl, facebookAffiliateUrl, affiliateUrl,
 }: Props) {
   const [config, setConfig] = useState<Connection | null>(null);
   const [existing, setExisting] = useState<Reel | null>(null);
@@ -73,6 +76,9 @@ export default function MetaPublishing({
   const [loadedRender, setLoadedRender] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [mode, setMode] = useState("studio");
+  const [aiGenerated, setAiGenerated] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<{ renderId: string; message: string } | null>(null);
   const base = scope + "/publishing/meta";
 
   useEffect(() => {
@@ -99,6 +105,18 @@ export default function MetaPublishing({
   }, [base, config?.connected, renderId, request, token]);
 
   const job = publication?.render_id === renderId ? publication : null;
+  const manual = mode === "product-tag";
+  const productLink = facebookAffiliateUrl || productUrl;
+  const canPrepare = !!videoUrl && loadedRender === renderId && !job && !busy;
+
+  async function copyForFacebook(value: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyStatus({ renderId, message: `คัดลอก${label}แล้ว` });
+    } catch {
+      setCopyStatus({ renderId, message: `คัดลอก${label}อัตโนมัติไม่ได้ เลือกข้อความแล้วคัดลอกได้จากช่องด้านบน` });
+    }
+  }
 
   async function run(action: string, task: () => Promise<void>) {
     setError("");
@@ -141,6 +159,17 @@ export default function MetaPublishing({
   function publish(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    if (!canPrepare) return;
+    if (manual) {
+      const caption = String(data.get("caption") ?? "").trim();
+      if (!caption) {
+        setCopyStatus({ renderId, message: "กรอกแคปชันก่อนคัดลอก" });
+        return;
+      }
+      void copyForFacebook(caption.includes(affiliateDisclosure) ? caption : `${caption}\n\n${affiliateDisclosure}`, "แคปชัน");
+      return;
+    }
+    if (!config?.publish_enabled) return;
     if (!window.confirm(`เผยแพร่ Reel แบบสาธารณะบนเพจ ${config?.page_name || config?.page_id} หรือไม่`)) return;
     const target = base + "/publications/" + renderId;
     void run("publish", async () => {
@@ -167,7 +196,7 @@ export default function MetaPublishing({
 
   return (
     <section className="panel" id="meta-publishing">
-      <div className="panel-head"><h2>เผยแพร่และตรวจสอบบน Facebook</h2><span>Meta Graph API</span></div>
+      <div className="panel-head"><h2>เผยแพร่และตรวจสอบบน Facebook</h2></div>
       {error && <p className="notice error" role="alert">{error}</p>}
       {!config ? <p className="muted">กำลังตรวจการเชื่อมต่อ…</p> : !config.connected ? (
         <p className="muted">พื้นที่ทำงานนี้ยังไม่ได้เชื่อมกับเพจ Facebook</p>
@@ -184,13 +213,39 @@ export default function MetaPublishing({
           <div className="column">
             <form onSubmit={publish}>
               <h3>โพสต์ Reel ใหม่</h3>
-              <p className="muted">เพจ {config.page_name || config.page_id} · สาธารณะ</p>
-              {!config.publish_enabled && <p className="muted">การเชื่อมต่อนี้เปิดให้อ่านสถานะ</p>}
-              {!canPublishRender && <p className="muted">เลือกวิดีโอที่เรนเดอร์เสร็จจากส่วนวิดีโอ</p>}
+              <p className="muted">เพจ {config.page_name || config.page_id}</p>
+              <label>วิธีเผยแพร่<select value={mode} disabled={!!busy} onChange={(event) => {
+                setMode(event.target.value);
+                setCopyStatus(null);
+              }}>
+                <option value="studio">โพสต์จาก Studio</option>
+                <option value="product-tag">ปักตะกร้า Shopee ใน Facebook</option>
+              </select></label>
+              {!manual && !config.publish_enabled && <p className="muted">การเชื่อมต่อนี้เปิดให้อ่านสถานะ</p>}
+              {!videoUrl && <p className="muted">เลือกวิดีโอที่เรนเดอร์เสร็จจากส่วนวิดีโอ</p>}
               <label>แคปชัน<textarea key={renderId} name="caption" maxLength={500} rows={3} required defaultValue={productName} /></label>
-              <label className="checkbox"><input key={renderId + (affiliateUrl ?? "")} name="comment" type="checkbox" disabled={!affiliateUrl} defaultChecked={!!affiliateUrl} /> โพสต์คอมเมนต์ลิงก์ Affiliate</label>
-              <label className="checkbox"><input name="ai_generated" type="checkbox" /> วิดีโอใช้ AI สร้างหรือแก้ไข</label>
-              <button className="primary" disabled={!!busy || !config.publish_enabled || !canPublishRender || loadedRender !== renderId || !!job}>{busy === "publish" ? "กำลังส่งให้ Facebook…" : "เผยแพร่จริงบน Facebook"}</button>
+              {manual ? <>
+                {job && <p className="muted">คลิปนี้มีงานเผยแพร่จาก Studio แล้ว ตรวจสถานะด้านล่างก่อนดำเนินการต่อ</p>}
+                <button className="secondary" disabled={!canPrepare}>คัดลอกแคปชันพร้อมข้อความแจ้งค่าคอมมิชชัน</button>
+                <small className="muted">{affiliateDisclosure}</small>
+                {productLink && <>
+                  <label>{facebookAffiliateUrl ? "ลิงก์ Affiliate ช่องทาง Facebook" : "ลิงก์สินค้าต้นทาง Shopee"}
+                    <input readOnly value={productLink} />
+                  </label>
+                  <button type="button" className="secondary" disabled={!canPrepare}
+                    onClick={() => void copyForFacebook(productLink, "ลิงก์สินค้า")}>คัดลอกลิงก์สินค้า</button>
+                </>}
+                {copyStatus?.renderId === renderId && <p className="muted" role="status">{copyStatus.message}</p>}
+                {canPrepare && <a href={videoUrl} download={`reel-${renderId}.mp4`}>ดาวน์โหลดคลิป MP4</a>}
+                <p className="muted">เชื่อม Shopee ใน Affiliate Partnerships ของเพจบนมือถือก่อน แล้วสร้าง Reel ด้วยคลิปนี้ เลือก การสร้างรายได้ → เพิ่มลิงก์สินค้า ตรวจให้ตรงกับสินค้าก่อนแชร์ และเปิดป้าย AI หรือการเปิดเผยตามที่คลิปต้องใช้ หลังแชร์ให้เปิด Reel เพื่อตรวจว่าแบนเนอร์พาไปยังสินค้า Shopee รายการเดิม</p>
+                {canPrepare && config.page_id && <a href={`https://www.facebook.com/${config.page_id}`}
+                  target="_blank" rel="noreferrer">เปิดเพจบน Facebook</a>}
+              </> : <>
+                <label className="checkbox"><input key={renderId + (affiliateUrl ?? "")} name="comment" type="checkbox" disabled={!affiliateUrl} defaultChecked={!!affiliateUrl} /> โพสต์คอมเมนต์ลิงก์ Affiliate</label>
+                <label className="checkbox"><input name="ai_generated" type="checkbox" checked={aiGenerated}
+                  onChange={(event) => setAiGenerated(event.target.checked)} /> วิดีโอใช้ AI สร้างหรือแก้ไข</label>
+                <button className="primary" disabled={!canPrepare || !config.publish_enabled}>{busy === "publish" ? "กำลังส่งให้ Facebook…" : "เผยแพร่จริงบน Facebook"}</button>
+              </>}
             </form>
             {job && <div className="result" aria-live="polite">
               <p>{statusLabels[job.stage] ?? job.stage}</p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import AffiliateLinks, { channelLabels } from "./affiliate-links";
 import AffiliateLinkSetup, { emptyJourney, readJourney, type AffiliateJourney, type CatalogProduct, type Selection } from "./affiliate-link-setup";
 import AffiliateResults from "./affiliate-results";
@@ -48,7 +48,7 @@ const steps = [
   { anchor: "products", title: "สินค้า", detail: "ข้อมูลสินค้า ลิงก์ และสิทธิ์ใช้ภาพ" },
   { anchor: "video", title: "วิดีโอ", detail: "เรนเดอร์และตรวจตัวอย่าง Reel" },
   { anchor: "simulation", title: "ทดสอบเผยแพร่", detail: "จำลองสถานะโพสต์และคอมเมนต์" },
-  { anchor: "meta-publishing", title: "Facebook", detail: "โพสต์และอ่านกลับผ่าน Meta API" },
+  { anchor: "meta-publishing", title: "Facebook", detail: "โพสต์ Reel หรือเตรียมคลิปไปปักตะกร้า" },
   { anchor: "campaigns", title: "แคมเปญ", detail: "จัดคิวและติดตามงานเผยแพร่" },
 ];
 
@@ -89,7 +89,7 @@ export default function Studio() {
   const [editingId, setEditingId] = useState("");
   const [renders, setRenders] = useState<Render[]>([]);
   const [renderId, setRenderId] = useState("");
-  const [video, setVideo] = useState("");
+  const [preview, setPreview] = useState<{ path: string; url: string } | null>(null);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [reelPlan, setReelPlan] = useState("");
   const [draft, setDraft] = useState<ReelDraft | null>(null);
@@ -105,11 +105,12 @@ export default function Studio() {
   const [affiliateAutoStart, setAffiliateAutoStart] = useState(false);
   const [linkRevision, setLinkRevision] = useState(0);
   const [boardDraft, setBoardDraft] = useState<(StoryboardSource & { workspace: string }) | null>(null);
-  const videoUrl = useRef("");
   const product = products.find((item) => item.id === productId);
   const editingProduct = products.find((item) => item.id === editingId);
   const render = renders.find((item) => item.id === renderId);
   const scope = `/workspaces/${workspaceId}`;
+  const videoPath = `${scope}/renders/${renderId}/video`;
+  const video = preview?.path === videoPath && render?.product_id === productId ? preview.url : "";
   const linkPath = productId ? `${scope}/products/${productId}/channel-links` : "";
   const channelLinks = linkResult?.path === linkPath ? linkResult.links : [];
   const activeLink = channelLinks.find((link) => link.channel === linkChannel);
@@ -195,7 +196,8 @@ export default function Studio() {
     if (!workspaceId || !token || !renderId || render?.status !== "completed") return;
     const controller = new AbortController();
     let active = true;
-    fetch(base + scope + `/renders/${renderId}/video`, {
+    let objectUrl = "";
+    fetch(base + videoPath, {
       headers: headers(token),
       signal: controller.signal,
     }).then((response) => {
@@ -203,19 +205,18 @@ export default function Studio() {
       return response.blob();
     }).then((blob) => {
       if (!active) return;
-      videoUrl.current = URL.createObjectURL(blob);
-      setVideo(videoUrl.current);
+      objectUrl = URL.createObjectURL(blob);
+      setPreview({ path: videoPath, url: objectUrl });
     }).catch((error) => {
       if (active) setNotice({ text: error.message, error: true });
     });
     return () => {
       active = false;
       controller.abort();
-      if (videoUrl.current) URL.revokeObjectURL(videoUrl.current);
-      videoUrl.current = "";
-      setVideo("");
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      setPreview(null);
     };
-  }, [render?.status, renderId, scope, token, workspaceId]);
+  }, [render?.status, renderId, token, videoPath, workspaceId]);
 
   function selectWorkspace(id: string) {
     setMediaFiles([]);
@@ -718,8 +719,9 @@ export default function Studio() {
             </div>
           </section>
           <MetaPublishing key={`meta/${workspaceId}`} request={api} scope={scope} token={token}
-            renderId={renderId} canPublishRender={render?.status === "completed" && !!video}
-            productName={product?.name ?? ""} affiliateUrl={facebookAffiliate ?? product?.affiliate_url} />
+            renderId={renderId} videoUrl={video} productName={product?.name ?? ""}
+            productUrl={product?.source_url} facebookAffiliateUrl={facebookAffiliate}
+            affiliateUrl={facebookAffiliate ?? product?.affiliate_url} />
           <Campaigns key={workspaceId} scope={scope} token={token} active={anchor === "campaigns"}
             canManage={workspaces.find((workspace) => workspace.id === workspaceId)?.role === "owner"}
             renders={renders.filter((item) => item.status === "completed").map((item) => ({

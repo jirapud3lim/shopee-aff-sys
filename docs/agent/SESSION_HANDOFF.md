@@ -1,5 +1,66 @@
 # Session handoff
 
+## Consolidated Studio updates (2026-11-23)
+
+- Before committing the two-step storyboard prompts, shared production rules, and Facebook Reel product-tag handoff, reran the Next.js webpack build, the Meta publishing regression test, and `git diff --check`. All passed.
+
+## Facebook desktop Reel product-link draft test (2026-11-23)
+
+- With user approval, uploaded the original 15-second Scotch-Brite test render to คัดของเข้าบ้าน in Safari. The new Reel composer displayed Settings → Add product → Add product link. The saved Facebook-channel Shopee Affiliate short URL still resolved to the exact two-pack listing in Safari, but the Facebook form reported an invalid URL and did not attach it. The canonical listing URL failed the approved-domain check. The signed-in [Meta Help Center](https://www.facebook.com/business/help/1947397312436633) documents a linked partner account and a single-product link, and excludes shortened URLs for automatic banner detection. The partner catalog path remains unverified.
+- Enabled the AI label and saved the Reel as a draft without a product tag. Confirmed the draft appeared in Content Library → Drafts and no new item appeared in Published. No publish command was sent.
+
+## Facebook Affiliate setup read-back (2026-11-23)
+
+- After the user completed mobile setup, Safari showed Affiliate Partnerships under Your Programs for คัดของเข้าบ้าน, previously under Ready to set up. The desktop program tile was disabled, so it did not identify the connected partner. The existing Scotch-Brite Reel's desktop post edit screen had no product-link control. The new Reel composer required a video before advancing. No video was uploaded, no changes were saved, and no post was published.
+
+## Facebook Reel product-tag handoff (2026-11-23)
+
+- Added a publishing mode for native Shopee product tags. Studio prepares the selected render, caption with commission disclosure, and the product's Facebook Affiliate URL or Shopee listing URL. The operator opens the configured Page and completes the product tag and applicable disclosures in Facebook before sharing. The Meta API publishing and Affiliate comment path remains available.
+- Verified in Safari against an isolated two-product fixture that the caption and product URL copy, the MP4 download matches its source byte for byte, switching products clears the previous clip and URL, and switching back exposes the existing publishing controls. The fixture received no publishing write. Live banner verification still requires completing the Page's Affiliate Partnerships setup on mobile.
+
+## Facebook Page Affiliate setup check (2026-11-23)
+
+- Switched to the คัดของเข้าบ้าน Page in Safari. Creator Dashboard → Monetization showed Affiliate Partnerships under Ready to set up. Opening it redirected to a QR setup page requiring the Facebook mobile app to connect the Affiliate account. Left the setup page open. Account linking and the native Add product links control on a Reel remain unverified. No accounts were linked and no Reel was published.
+
+## Facebook Reel product tagging check (2026-11-23)
+
+- Checked the live publishing UI and Meta adapter. Studio publishes the Reel and optionally posts and verifies an Affiliate URL in a Page comment. It has no native product-tag input, write, or read-back. The public [Page Video Reels API v27.0](https://developers.facebook.com/docs/graph-api/reference/page/video_reels) lists no product-tag field. [Shopee Thailand](https://help.shopee.co.th/portal/10/article/185398) documents the native product banner through Facebook Affiliate Partnerships for eligible Pages. The configured Page's Partnership eligibility and native banner remain unverified. No live post was made.
+
+## AI content and disclosure rules (2026-11-23)
+
+- Added project-wide rules for separate AI and Affiliate disclosures, verifiable claims and asset rights, and channel-specific checks for TikTok, Meta Reels, and Mission Shopee Video. Linked the rules from the publishing step, CLAUDE.md, and Reel Master Prompt. Verified the documentation with `git diff --check`.
+
+## Shared product pipeline rules (2026-11-23)
+
+- Added one set of rules in AGENTS.md for every product and linked it from CLAUDE.md and the Reel Master Prompt. The rules cover product and Affiliate link identity, exported media review, scoped repairs and retries, separate live-publication authorization, and shot-level asset and approval traceability. Verified the documentation with `git diff --check`.
+
+## Saved Flow presenter rule (2026-11-23)
+
+- Recorded the project-wide requirement in AGENTS.md and linked it from CLAUDE.md and the Reel Master Prompt. Product videos and voiceovers use the saved พิธีกรคัดของเข้าบ้าน character and its Callirrhoe voice. Reuse matching references and recordings, synthesize only needed lines, and preserve approved footage for audio-only fixes.
+
+## JUDYDOLL #01 WAVE presenter voice revision (2026-11-23)
+
+- Verified that the saved Google Flow character [พิธีกรคัดของเข้าบ้าน](https://flow.google.com/project/81d65799-15e1-4834-b708-4e17857d09ff/character/0e74b82c-79cb-43da-badb-dc5e6d520d35) uses Callirrhoe. Generated and downloaded the four approved lines from Flow’s Callirrhoe preview with the character’s Thai delivery direction. Used Thai phonetic spellings for JUDYDOLL and Shopee. No new video was generated.
+- Exported `JUDYDOLL-01-WAVE-review-callirrhoe.mp4` with the original video stream and new narration. Matching video stream SHA-256, a full decode, FFprobe (15.00 seconds, 720 × 1280, 9:16), and Thai ASR verified the export and all four lines. The review MP4 and source WAVs are under `backend/.local/judydoll-01-wave-video/`. No Reel was published.
+
+## JUDYDOLL #01 WAVE approved video preview (2026-11-23)
+
+- The user approved all four stills. Set Flow Agent to Veo 3.1 Lite, 9:16, and one output per shot. Sent a separate video command with the approved 01–04 start frames. Rechecked those settings for the silent 03 retry and the locked-framing retakes of 01, 02, and 04. Restored the original muted-video display setting after downloading.
+- The first 03 failed at Flow audio synthesis. The silent retry recovered the approved macro; later frames introduced a finger. Selected clean source sections across all four shots and trimmed out hand, brush, or transition artifacts. Preserved the single product, four-pan layout, shot order, and upper space in the closer.
+- Saved the four selected Flow clips and `JUDYDOLL-01-WAVE-review.mp4` under `backend/.local/judydoll-01-wave-video/`. Used the Mac's Thai voice with the approved four lines for consistent narration. FFprobe confirmed an exact 15.00-second H.264/AAC export at 720 × 1280, 30 fps, 9:16. Decoded the whole file and checked beginning, middle, and end frames per shot. The [Flow project](https://flow.google.com/project/c904478e-448d-478b-ac2a-da34f48cedaf) retains the source generations. No publication was requested.
+
+## JUDYDOLL storyboard from approved references (2026-11-23)
+
+- After the user approved R01–R03, attached those three stills and the original #01 WAVE Shopee photo to one separate storyboard command in [Flow](https://flow.google.com/project/c904478e-448d-478b-ac2a-da34f48cedaf). Verified Agent image defaults at 9:16 and one output per shot.
+- Downloaded four independent photorealistic stills in shot order. Checked the single peach-pink compact, four-pan layout where fully shown, and two left highlight textures in the macro. The wordmark and matte pink look lighter in the angled frames. The Shopee image is the authority for color and markings.
+- Kept the 768 × 1376 Flow originals, verified the 765 × 1360 review copies are exactly 9:16, and saved the timing, planned Thai narration, and Flow frame links under `backend/.local/judydoll-01-wave-storyboard-v2/`. Waiting for storyboard approval. No video or audio was generated.
+
+## Two-step prompt and JUDYDOLL product refs (2026-11-23)
+
+- Split the Master Prompt into product analysis and reference images first, then a separate still storyboard prompt that consumes the reviewed reference set. Updated the workflow guidance and Studio's storyboard prompt. The Next.js webpack build and `git diff --check` passed.
+- Verified #01 WAVE against the original Shopee SKU photo. Flow Agent generated three 1024 × 1024 reference stills for overhead pan layout, the front three-quarter material view, and the two left highlight textures. The warm translucent case and four-pan layout match the source wherever fully visible. Use the original source for exact lettering and color comparison.
+- Original, reviewed reference images, comparison sheet, and Thai product analysis are in `backend/.local/judydoll-01-wave-references/`. The [Flow reference project](https://flow.google.com/project/c904478e-448d-478b-ac2a-da34f48cedaf) is separate from the earlier storyboard. Stopped at reference review per request.
+
 ## JUDYDOLL #01 WAVE still storyboard (2026-11-23)
 
 - Verified the single JUDYDOLL HIGHLIGHT & CONTOUR 9g #01 WAVE Upgraded Version in the Shopee variant picker. Downloaded the matching original from the Shopee image CDN. Used it as the only reference for a 15-second product-only storyboard with no presenter.

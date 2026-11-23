@@ -32,9 +32,15 @@ Build a secure multi-tenant SaaS. First deliver authorized **Shopee product/affi
 - Google Trends is interest data, not Shopee sales. Google Veo access and pricing must be verified before use.
 - Do not mark platform-specific features as production-ready until confirmed with approved official integrations.
 
+## Product pipeline
+
+Apply the [product pipeline rules](AGENTS.md#product-pipeline-rules) and [AI content and disclosure rules](AGENTS.md#ai-content-and-disclosure) in AGENTS.md from product selection through publication, including work outside Google Flow.
+
+Apply the [saved character and voice rule in AGENTS.md](AGENTS.md#product-videos-and-voiceovers) to every product video or voiceover, including audio-only edits.
+
 ## Google Flow
 
-Follow the [Google Flow workflow in AGENTS.md](AGENTS.md#google-flow-workflow). Use photorealistic still images in every storyboard panel and verify them before presenting the storyboard for explicit approval. Generate every approved shot in vertical 9:16 with Veo 3.1 Lite.
+Follow the [Google Flow workflow in AGENTS.md](AGENTS.md#google-flow-workflow). Analyze the exact product and prepare its reference stills before sending a separate storyboard prompt. Use photorealistic still images in every storyboard panel and verify them before presenting the storyboard for explicit approval. Generate every approved shot in vertical 9:16 with Veo 3.1 Lite.
 
 ## Definition of Done for each task
 - Requirement and acceptance condition met; scoped security checked.

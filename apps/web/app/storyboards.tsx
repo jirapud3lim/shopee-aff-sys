@@ -59,7 +59,7 @@ function flowPrompt(board: Board) {
     "Create a still-image storyboard only. Do not generate video or audio.",
     `Return a single contact sheet with exactly ${board.scenes.length} scenes in reading order, one scene per cell. ${grid} Keep each panel framed vertically in 9:16. Put consecutive numbers starting at 01 in the gutter beside each panel. Use the durations and dialogue as planning notes only. Do not draw subtitles, dialogue, or other captions inside the panels.`,
     "Every panel must look like a real photograph. Use natural lighting and shadows, realistic textures and proportions, and physically plausible poses and contact. Avoid illustrations, sketches, cartoons, and stylized renders.",
-    "Use the attached product-reference image for the exact model, count, color, packaging and label. Use the attached presenter-reference image for the same face and appearance wherever the presenter is visible. Keep the product and character consistent. Do not invent details, claims, label text, or product variants. Where the label matters, use the actual photographed label in the reference.",
+    "This is the storyboard stage. Use the attached product reference or reference sheet reviewed against original product photos in the preceding analysis stage. Reuse those references to match the exact model, count, color, packaging and label across all panels. Use the attached presenter-reference image for the same face and appearance wherever the presenter is visible. Do not invent details, claims, label text, or product variants. Where the label matters, use the actual photographed label in the reference.",
     `Product: ${board.product_name}\nExact variant: ${board.variant}\nVerified visible details: ${board.verified_details}`,
     ...board.scenes.map((scene, index) => [
       `Scene ${String(index + 1).padStart(2, "0")} · ${scene.seconds}s`,
@@ -82,7 +82,7 @@ function DraftForm({ source, busy, onSave, onClose }: {
     <label>รุ่น สี หรือขนาดที่ตรงกับสินค้าจริง<input name="variant" required maxLength={180} /></label>
     <label>รายละเอียดที่ตรวจสอบแล้ว<textarea name="verified" required rows={2} maxLength={600}
       placeholder="เช่น ฉลากด้านหน้า รุ่น และจำนวนห่อในชุด" /></label>
-    <label>รูปสินค้าจริงที่ใช้เป็นภาพอ้างอิง<input name="product" required type="file" accept={types} /></label>
+    <label>ภาพอ้างอิงสินค้าที่ตรวจเทียบกับรูปจริงแล้ว<input name="product" required type="file" accept={types} /></label>
     <label>รูปอ้างอิงหน้าพิธีกร<input name="presenter" required type="file" accept={types} /></label>
     {sceneKeys.map((key, index) => <fieldset key={key} className="storyboard-scene">
       <legend>ฉาก {String(index + 1).padStart(2, "0")}</legend>

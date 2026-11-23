@@ -77,9 +77,10 @@ For refreshes, open [Shopee Affiliate Product Offers](https://affiliate.shopee.c
 
 ### Prepare a still storyboard in Google Flow
 
-1. Use **เตรียม Storyboard** beside a ranked Shopee offer or Google Trends match. Confirm the exact variant, add verified details and the two reference photos, and save the shot plan. Plans and images are stored under the workspace in `RENDER_ROOT/storyboards`.
-2. For the Safari handoff, open Studio at `http://127.0.0.1:3014` with Affiliate Studio Capture 0.4.0 enabled. Sign in to Flow and give the extension access to local Studio and `flow.google.com`. Enter the Flow project or collection link once for the workspace, then click **สร้าง Storyboard ภาพนิ่งใน Flow**. Safari attaches both references and enters the prompt in Image mode at 9:16 with one output. If Flow waits for a direct click, click **เริ่มสร้าง** in the Flow tab once. Keep both tabs open while Studio checks for and loads the matching still for review.
-3. For manual handoff, click **คัดลอกพรอมป์และเปิด Flow**, paste it and attach the two references, then download and import the result. In either workflow, compare each photorealistic panel with the references before approval.
+1. Use the first of the [two prompts](Shopee_Studio_Reel_Master_Prompt_v2.md#2-สองพรอมต์ก่อนสร้างวิดีโอ) to analyze original images of the exact product variant and prepare separate reference stills. Check them against the originals.
+2. Use **เตรียม Storyboard** beside a ranked Shopee offer or Google Trends match. Add the verified details and the reviewed product image or reference sheet, then save the shot plan. The Studio form also takes a presenter reference. Plans and images are stored under the workspace in `RENDER_ROOT/storyboards`.
+3. For the Safari handoff, open Studio at `http://127.0.0.1:3014` with Affiliate Studio Capture 0.4.0 enabled. Sign in to Flow and give the extension access to local Studio and `flow.google.com`. Enter the Flow project or collection link once for the workspace, then click **สร้าง Storyboard ภาพนิ่งใน Flow**. Safari attaches both references and enters the prompt in Image mode at 9:16 with one output. If Flow waits for a direct click, click **เริ่มสร้าง** in the Flow tab once. Keep both tabs open while Studio checks for and loads the matching still for review.
+4. For manual handoff, click **คัดลอกพรอมป์และเปิด Flow**, paste it and attach the references, then download and import the result. In either workflow, compare each photorealistic panel with the references before approval.
 
 
 ## Connect a local Facebook Page
