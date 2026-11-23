@@ -1,5 +1,35 @@
 # Session handoff
 
+## Project workflow and TikTok handoff checkpoint (2026-11-23)
+
+- Documented verified product identity, Flow storyboard approval, MP4 review, platform disclosures, Facebook and TikTok publication paths, and Shopee Affiliate reporting in `docs/product/WORKFLOW.md`.
+- The Next.js webpack build and Meta publishing regression test passed. The information site source remains local because it includes the contact approved for the private Privacy Policy page and public access remains pending.
+
+## Affiliate Studio information site for TikTok Sandbox (2026-11-23)
+
+- Prepared a static product page, Terms of Service and Privacy Policy under `sites/affiliate-studio`. Included the operator and privacy contact supplied by the user in the Privacy Policy. Checked the home page and policy links locally, then deployed version 1 with owner-only access.
+- Exported the existing Affiliate Studio mark as a 1024 × 1024 PNG and uploaded it to the TikTok Sandbox form. The form dropped from four validation errors to three. Automatic review rejected switching the website to public because the request did not explicitly approve public access to all three pages. TikTok cannot verify the URLs until that access is approved.
+
+## TikTok developer Sandbox setup (2026-11-23)
+
+- Created the Individual developer app **Affiliate Studio** and its **Inbox Upload Test** Sandbox. In the Sandbox editor, added Login Kit and Content Posting API, confirmed the listed `video.upload` scope, and entered the Desktop OAuth callback `http://127.0.0.1:8046/callback/`. Direct Post is off.
+- TikTok requires the app's official website, Terms of Service, and Privacy Policy URLs before applying the configuration. The browser holds the unsaved form. Target-user authorization and the API upload test remain pending.
+
+## TikTok Content Posting API readiness (2026-11-23)
+
+- Studio has no TikTok OAuth or Content Posting API configuration. The Manage Apps portal in Safari displayed a separate TikTok for Developers sign-in, so app and scope approval remain unverified. The previous web upload did not use the API.
+- The next live check is an authorized `video.upload` file upload confirmed by `SEND_TO_USER_INBOX` and the matching inbox notification. TikTok documents Sandbox for restricted testing with a target user and URL verification for Content Posting API. No API upload was attempted.
+
+## TikTok Studio live upload test (2026-11-23)
+
+- After signing in to the intended account in Safari, uploaded a non-product test pattern directly through the TikTok Studio web uploader. The 15-second 720 × 1280 MP4 with H.264 and AAC passed a full local decode. TikTok showed **Uploaded (6.28 MB)** and a 15-second preview. Left the composer open before publication. No post was published.
+
+## TikTok publishing handoff (2026-11-23)
+
+- Added a TikTok destination to Studio. It previews the selected completed Reel or a finished local MP4, downloads the Studio render, and copies the caption with optional AI and Affiliate disclosure text. The upload link opens TikTok Studio for account selection, platform disclosures, and manual publishing.
+- Verified the completed-render preview and download link, copy and paste of both disclosures, and local MP4 selection and removal in Safari against an isolated fixture. Switching to the local file cleared the previous caption and disclosures. The Next.js webpack build, Meta publishing regression test, and `git diff --check` passed.
+- No TikTok account was connected, and no clip was uploaded or published to TikTok. API draft upload requires an approved TikTok app and creator authorization for `video.upload`.
+
 ## Consolidated Studio updates (2026-11-23)
 
 - Before committing the two-step storyboard prompts, shared production rules, and Facebook Reel product-tag handoff, reran the Next.js webpack build, the Meta publishing regression test, and `git diff --check`. All passed.

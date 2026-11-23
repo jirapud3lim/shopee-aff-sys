@@ -1,6 +1,8 @@
 # Shopee Affiliate Studio
 
-Local workflow for a single product from inventory and affiliate URL through MP4 preview and Facebook publishing. Start with [current phase](docs/agent/CURRENT_PHASE.md) and [roadmap](docs/ROADMAP.md).
+Local workflow for a single product from inventory and affiliate URL through MP4 preview, Facebook publishing, and manual TikTok publishing. Start with [current phase](docs/agent/CURRENT_PHASE.md) and [roadmap](docs/ROADMAP.md).
+
+See the [project workflow diagram](docs/product/WORKFLOW.md) for the steps from product discovery to publication and Affiliate reporting.
 
 ## Run locally
 
@@ -92,6 +94,14 @@ uv run --with cryptography python spikes/phase0_meta/run.py studio
 ```
 
 Select **Facebook** in Studio and enter a Reel ID to read its publication status and the latest comments authored by the connected Page. Set `META_STUDIO_PUBLISH_ENABLED=true` and restart the API to make publishing available to the configured workspace owner. A completed render, a caption, and recorded image rights are required. Studio uses the Facebook channel's Affiliate URL for the optional comment, with the product's existing Affiliate URL as a fallback. After Meta confirms Reel publication, Studio posts the comment and polls for read-back. If processing outlasts polling or you close the page, load the same render and refresh its publication status to continue the pending comment. Each render can submit one live publication. Studio reconciles ambiguous responses by reading existing status.
+
+## Prepare a TikTok post
+
+Open **TikTok** in the Studio sidebar. Select a completed render under **วิดีโอ**, or open an already edited MP4 in the TikTok panel to preview it with its original audio. For a Studio render, download the MP4 from the panel.
+
+Review the complete video and caption, describe any AI-generated visuals or audio, and include the commission disclosure for Affiliate content. Copy the caption and open TikTok Studio. Upload the reviewed file to the intended account, apply the applicable [AI label](https://support.tiktok.com/en/using-tiktok/creating-videos/ai-generated-content) and [commercial disclosure](https://support.tiktok.com/en/business-and-creator/creator-and-business-accounts/promoting-a-brand-product-or-service), and verify any product attachment against the selected product and variant. If a required control is missing in the web uploader, complete that step in the TikTok app before posting. Check the live post and any product attachment after publication.
+
+This is a manual handoff. An API upload to the TikTok inbox requires a registered TikTok app with [Content Posting API approval and creator authorization for `video.upload`](https://developers.tiktok.com/docs/en/content-posting-api-get-started-upload-content).
 
 ## Schedule publishing campaigns
 

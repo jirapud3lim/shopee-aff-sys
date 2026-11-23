@@ -10,6 +10,7 @@ import ProductDiscovery from "./product-discovery";
 import PurchasePreviews from "./purchase-previews";
 import ShopeeOffers from "./shopee-offers";
 import Storyboards, { type StoryboardSource } from "./storyboards";
+import TikTokPublishing from "./tiktok-publishing";
 import TrendExplorer from "./trend-explorer";
 
 type Workspace = { id: string; name: string; role: string };
@@ -49,6 +50,7 @@ const steps = [
   { anchor: "video", title: "วิดีโอ", detail: "เรนเดอร์และตรวจตัวอย่าง Reel" },
   { anchor: "simulation", title: "ทดสอบเผยแพร่", detail: "จำลองสถานะโพสต์และคอมเมนต์" },
   { anchor: "meta-publishing", title: "Facebook", detail: "โพสต์ Reel หรือเตรียมคลิปไปปักตะกร้า" },
+  { anchor: "tiktok-publishing", title: "TikTok", detail: "เตรียมคลิปและแคปชันสำหรับ TikTok Studio" },
   { anchor: "campaigns", title: "แคมเปญ", detail: "จัดคิวและติดตามงานเผยแพร่" },
 ];
 
@@ -138,7 +140,7 @@ export default function Studio() {
       ? document.getElementById("affiliate-journey") : null;
     (journeyHeader ?? target)?.scrollIntoView();
     if (!showingWorkspace) target?.querySelector("h1")?.focus({ preventScroll: true });
-    if (anchor === "products" || anchor === "video") target?.querySelector("h2")?.focus({ preventScroll: true });
+    if (["products", "video", "tiktok-publishing"].includes(anchor)) target?.querySelector("h2")?.focus({ preventScroll: true });
   }, [anchor, showingWorkspace, workspaceId]);
 
   useEffect(() => {
@@ -722,6 +724,8 @@ export default function Studio() {
             renderId={renderId} videoUrl={video} productName={product?.name ?? ""}
             productUrl={product?.source_url} facebookAffiliateUrl={facebookAffiliate}
             affiliateUrl={facebookAffiliate ?? product?.affiliate_url} />
+          <TikTokPublishing key={`${workspaceId}/${productId}/${renderId}`}
+            renderId={renderId} videoUrl={video} productName={product?.name ?? ""} />
           <Campaigns key={workspaceId} scope={scope} token={token} active={anchor === "campaigns"}
             canManage={workspaces.find((workspace) => workspace.id === workspaceId)?.role === "owner"}
             renders={renders.filter((item) => item.status === "completed").map((item) => ({
