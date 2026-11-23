@@ -1,0 +1,12 @@
+# Shopee Affiliate Studio agent instructions
+
+Follow the project's [operating instructions](CLAUDE.md). The Google Flow rule below applies when an agent prepares or generates video in Flow, including a single insert, a batch of scenes, or an added shot.
+
+## Google Flow workflow
+
+1. **Storyboard first.** Use the verified product references and the selected presenter reference when the shot calls for one. Ask Flow Agent for still images only, with one numbered panel framed vertically at 9:16 for each planned shot. Record the planned duration, action, and dialogue or voiceover for each shot that needs it. Choose the number and length of shots for the brief. The 12 × 5-second storyboard was an example.
+   - **Photorealistic stills only.** Require every panel to look like a real photograph, including product close-ups, inserts, and revisions. In the Flow prompt, specify natural lighting and shadows, realistic textures and proportions, and physically plausible poses and contact where applicable. Exclude illustrations, cartoons, sketches, and visibly stylized renders.
+2. **Review and stop.** Show the actual storyboard images and shot order to the user. Check the product model, color, packaging and label, item count, presenter consistency, and any hold or hand action against the references. Flag visible mismatches and regenerate the affected storyboard panels as needed. Wait for the user to explicitly approve the presented version or the specific shots before sending a video-generation command. An initial request to start the workflow authorizes the storyboard stage.
+   - Check each panel for photorealism before presenting the storyboard for approval. Revise any panel that fails this check.
+3. **Generate only the approved scope in 9:16 with Veo 3.1 Lite.** After approval, select and verify both settings in Flow before every video-generation request, including retries. Send a separate Flow Agent command listing the approved shot numbers and asking it to generate those videos in order. If either required setting is unavailable or cannot be verified, pause and tell the user. If a shot changes or a new shot is requested, create and show its storyboard panel, then wait for approval of that panel before generating it.
+4. **Verify and download.** Check that Flow returned the approved shots in vertical 9:16 and that the output still matches the references. Keep the storyboard shot numbers in the clip names or download order so the clips can be assembled correctly.

@@ -14,6 +14,7 @@ from app.auth import WorkspaceContext, require_workspace
 from app.db import Base, get_db
 from app.models import Organization
 from app.products import ChannelLink, Product
+from app.shopee_offers import ShopeeOffer
 from app.shopee_report_csv import BANGKOK
 
 
@@ -32,6 +33,10 @@ def test_feed_age_and_thai_matches_are_workspace_scoped(monkeypatch):
             Product(id="other", workspace_id="a", name="ผ้าไมโครไฟเบอร์",
                     source_url="https://shopee.co.th.example.com/product/1/2"),
         ])
+        for workspace_id, offer_id in (("a", "100"), ("b", "200")):
+            db.add(ShopeeOffer(workspace_id=workspace_id, offer_id=offer_id, name="ผ้าไมโครไฟเบอร์",
+                               sold=100, sold_is_minimum=False, price_satang=10000,
+                               commission_bps=1000, observed_at=datetime.now(timezone.utc)))
 
     def session():
         with sessions() as db:
@@ -71,6 +76,9 @@ def test_feed_age_and_thai_matches_are_workspace_scoped(monkeypatch):
         assert four_hours["catalog_count"] == 1
         trend, = four_hours["trends"]
         assert trend["traffic"] == "200+"
+        assert "offer_matches" not in trend
+        with_offers = client.get(path, params={"hours": "4", "include_offers": "true"}).json()
+        assert with_offers["trends"][0]["offer_matches"] == [{"offer_id": "100", "score": 47}]
         result, = trend["matches"]
         assert result["product_id"] == "cloth-a"
         assert result["terms"] and result["phrase"]

@@ -1,26 +1,26 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import AffiliateLinks, { channelLabels } from "./affiliate-links";
+import AffiliateLinkSetup, { emptyJourney, readJourney, type AffiliateJourney, type CatalogProduct, type Selection } from "./affiliate-link-setup";
 import AffiliateResults from "./affiliate-results";
 import Campaigns from "./campaigns";
 import MetaPublishing from "./meta-publishing";
+import ProductDiscovery from "./product-discovery";
+import PurchasePreviews from "./purchase-previews";
 import ShopeeOffers from "./shopee-offers";
+import Storyboards, { type StoryboardSource } from "./storyboards";
 import TrendExplorer from "./trend-explorer";
 
 type Workspace = { id: string; name: string; role: string };
-type Product = {
-  id: string;
-  name: string;
-  source_url: string;
-  affiliate_url: string | null;
-  image_rights_note: string | null;
-};
+type Product = CatalogProduct;
 type ImportReport = {
   imported: number;
   duplicates: { row: number; source_url: string; reason: string }[];
   errors: { row: number; error: string }[];
 };
 type Render = { id: string; product_id: string; status: string };
+type ReelDraft = { query: string; source: "trend" | "lookup"; scenes: string[] };
 type Simulation = {
   id: string;
   render_id: string;
@@ -31,6 +31,19 @@ type Simulation = {
 };
 
 const base = "/api/v1";
+const sceneLabels = ["เปิดเรื่อง · 0–5 วิ", "แนะนำสินค้า · 5–10 วิ", "ชวนดูรายละเอียด · 10–15 วิ"];
+
+function shortLine(value: string) {
+  const clean = value.trim().replace(/\s+/g, " ");
+  const segmenter = new Intl.Segmenter("th", { granularity: "grapheme" });
+  if (clean.length <= 54) return clean;
+  let trimmed = "";
+  for (const { segment } of segmenter.segment(clean)) {
+    if (trimmed.length + segment.length > 53) break;
+    trimmed += segment;
+  }
+  return trimmed.trimEnd() + "…";
+}
 const steps = [
   { anchor: "products", title: "สินค้า", detail: "ข้อมูลสินค้า ลิงก์ และสิทธิ์ใช้ภาพ" },
   { anchor: "video", title: "วิดีโอ", detail: "เรนเดอร์และตรวจตัวอย่าง Reel" },
@@ -66,11 +79,6 @@ async function api<T>(path: string, token: string, init?: RequestInit): Promise<
 
 type ChannelLink = { channel: string; affiliate_url: string; sub_id: string | null };
 
-const channelLabels: Record<string, string> = {
-  facebook: "Facebook", instagram: "Instagram", tiktok: "TikTok",
-  youtube: "YouTube", line: "LINE",
-};
-
 export default function Studio() {
   const [token, setToken] = useState("");
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -82,6 +90,9 @@ export default function Studio() {
   const [renders, setRenders] = useState<Render[]>([]);
   const [renderId, setRenderId] = useState("");
   const [video, setVideo] = useState("");
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [reelPlan, setReelPlan] = useState("");
+  const [draft, setDraft] = useState<ReelDraft | null>(null);
   const [simulation, setSimulation] = useState<Simulation | null>(null);
   const [simulations, setSimulations] = useState<Simulation[]>([]);
   const [busy, setBusy] = useState("");
@@ -90,6 +101,10 @@ export default function Studio() {
   const [linkResult, setLinkResult] = useState<{ path: string; links: ChannelLink[] } | null>(null);
   const [linkChannel, setLinkChannel] = useState("facebook");
   const [anchor, setAnchor] = useState("");
+  const [affiliateJourney, setAffiliateJourney] = useState<AffiliateJourney>(emptyJourney);
+  const [affiliateAutoStart, setAffiliateAutoStart] = useState(false);
+  const [linkRevision, setLinkRevision] = useState(0);
+  const [boardDraft, setBoardDraft] = useState<(StoryboardSource & { workspace: string }) | null>(null);
   const videoUrl = useRef("");
   const product = products.find((item) => item.id === productId);
   const editingProduct = products.find((item) => item.id === editingId);
@@ -100,9 +115,13 @@ export default function Studio() {
   const activeLink = channelLinks.find((link) => link.channel === linkChannel);
   const facebookAffiliate = channelLinks.find((link) => link.channel === "facebook")?.affiliate_url;
   const showingResults = anchor === "affiliate-results";
+  const showingDiscovery = anchor === "" || anchor === "discover";
+  const showingLinks = anchor === "affiliate-links";
   const showingOffers = anchor === "shopee-offers";
+  const showingStoryboards = anchor === "storyboards";
   const showingTrends = anchor === "trends";
-  const showingWorkspace = !showingResults && !showingTrends && !showingOffers;
+  const showingPurchases = anchor === "purchase-previews";
+  const showingWorkspace = !showingDiscovery && !showingResults && !showingLinks && !showingTrends && !showingPurchases && !showingOffers && !showingStoryboards;
 
   useEffect(() => {
     const syncAnchor = () => setAnchor(window.location.hash.slice(1));
@@ -113,11 +132,13 @@ export default function Studio() {
 
   useEffect(() => {
     if (!workspaceId) return;
-    const target = document.getElementById(anchor);
-    target?.scrollIntoView();
-    if (anchor === "affiliate-results" || anchor === "trends" || anchor === "shopee-offers") target?.querySelector("h1")?.focus({ preventScroll: true });
-    if (anchor === "products") target?.querySelector("h2")?.focus({ preventScroll: true });
-  }, [anchor, workspaceId]);
+    const target = document.getElementById(anchor || "discover");
+    const journeyHeader = ["trends", "shopee-offers", "affiliate-links"].includes(anchor)
+      ? document.getElementById("affiliate-journey") : null;
+    (journeyHeader ?? target)?.scrollIntoView();
+    if (!showingWorkspace) target?.querySelector("h1")?.focus({ preventScroll: true });
+    if (anchor === "products" || anchor === "video") target?.querySelector("h2")?.focus({ preventScroll: true });
+  }, [anchor, showingWorkspace, workspaceId]);
 
   useEffect(() => {
     if (!linkPath || !token) return;
@@ -161,7 +182,7 @@ export default function Studio() {
     ]).then(([items, media, saved]) => {
       if (!active) return;
       setProducts(items);
-      setProductId(items[0]?.id ?? "");
+      setProductId((selected) => items.some((item) => item.id === selected) ? selected : (items[0]?.id ?? ""));
       setRenders(media);
       setSimulations(saved);
     }).catch((error) => {
@@ -197,19 +218,44 @@ export default function Studio() {
   }, [render?.status, renderId, scope, token, workspaceId]);
 
   function selectWorkspace(id: string) {
+    setMediaFiles([]);
+    setReelPlan("");
     setProducts([]);
     setProductId("");
     setEditingId("");
     setRenders([]);
     setRenderId("");
+    setDraft(null);
     setSimulation(null);
     setSimulations([]);
     setImportReport(null);
     setNotice({ text: "", error: false });
+    setAffiliateJourney(readJourney(id));
+    setAffiliateAutoStart(false);
     setWorkspaceId(id);
   }
 
+  function goToAffiliateStep(next: AffiliateJourney, step: string) {
+    setAffiliateJourney(next);
+    try {
+      sessionStorage.setItem(`affiliate-journey:${workspaceId}`, JSON.stringify(next));
+    } catch {
+      // The current tab can continue without browser storage.
+    }
+    window.location.hash = step;
+  }
+
+  function chooseProduct(offer: Selection, trend: string) {
+    setAffiliateAutoStart(true);
+    goToAffiliateStep({ trend, offer }, "affiliate-links");
+  }
+
   function selectProduct(id: string) {
+    if (id !== productId) {
+      setDraft(null);
+      setMediaFiles([]);
+      setReelPlan("");
+    }
     setProductId(id);
     setEditingId("");
     setRenderId("");
@@ -224,6 +270,29 @@ export default function Studio() {
   function openReportProduct(id: string) {
     selectProduct(id);
     window.location.hash = "products";
+  }
+
+  function openStoryboard(kind: StoryboardSource["kind"], id: string, name: string) {
+    setBoardDraft({ kind, id, name, workspace: workspaceId });
+    window.location.hash = "storyboards";
+  }
+
+  function prepareReel(id: string, query: string, source: ReelDraft["source"]) {
+    const selected = products.find((item) => item.id === id);
+    if (!selected) {
+      setNotice({ text: "ไม่พบสินค้าในคลังของพื้นที่ทำงานนี้", error: true });
+      return;
+    }
+    selectProduct(id);
+    setDraft({
+      query, source, scenes: [
+        "กำลังมองหาอยู่ไหม?\n" + shortLine(query),
+        shortLine(selected.name),
+        "ดูรายละเอียดสินค้าก่อนตัดสินใจ",
+      ],
+    });
+    setNotice({ text: "", error: false });
+    window.location.hash = "video";
   }
 
   async function run(label: string, action: () => Promise<void>) {
@@ -312,10 +381,21 @@ export default function Studio() {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    if (data.getAll("images").length !== 3) {
-      setNotice({ text: "เลือกไฟล์ภาพ 3 ภาพ", error: true });
+    const hasFootage = mediaFiles.some((file) => file.type.startsWith("video/") || /\.(mp4|mov)$/i.test(file.name));
+    const plan = reelPlan.trim();
+    if (!mediaFiles.length || (!plan && !hasFootage && mediaFiles.length < 4)) {
+      setNotice({ text: "เลือกคลิปสินค้าหรือภาพสินค้าอย่างน้อย 4 ภาพ", error: true });
       return;
     }
+    if (plan) {
+      try { JSON.parse(plan); } catch {
+        setNotice({ text: "ตรวจรูปแบบ JSON ของแผนก่อนสร้างวิดีโอ", error: true });
+        return;
+      }
+      data.set("reel_plan", plan);
+      data.delete("scene_texts");
+    }
+    mediaFiles.forEach((file) => data.append("media", file));
     data.set("product_id", productId);
     void run("render", async () => {
       const result = await api<Render>(scope + "/renders", token, { method: "POST", body: data });
@@ -399,10 +479,14 @@ export default function Studio() {
           </details>
         </div>
         {workspaceId && <nav aria-label="เมนู Studio">
-          <a href="#shopee-offers" aria-current={showingOffers ? "location" : undefined}>สินค้าขายดีและค่าคอม</a>
-          {steps.map((step) => <a href={`#${step.anchor}`} key={step.anchor}>{step.title}</a>)}
-          <a href="#affiliate-results" aria-current={showingResults ? "location" : undefined}>ผลลัพธ์ Affiliate</a>
+          <a href="#discover" aria-current={showingDiscovery ? "location" : undefined}>เลือกสินค้า</a>
           <a href="#trends" aria-current={showingTrends ? "location" : undefined}>Google Trends</a>
+          <a href="#shopee-offers" aria-current={showingOffers ? "location" : undefined}>คัดสินค้า Shopee</a>
+          <a href="#affiliate-links" aria-current={showingLinks ? "location" : undefined}>ลิงก์ Affiliate</a>
+          <a href="#storyboards" aria-current={showingStoryboards ? "location" : undefined}>Storyboard</a>
+          {steps.map((step) => <a href={`#${step.anchor}`} key={step.anchor}>{step.title}</a>)}
+          <a href="#purchase-previews" aria-current={showingPurchases ? "location" : undefined}>Reel จากสินค้าที่เคยซื้อ</a>
+          <a href="#affiliate-results" aria-current={showingResults ? "location" : undefined}>ผลลัพธ์ Affiliate</a>
         </nav>}
         <button type="button" className="text-button logout" onClick={logout} disabled={!!busy}>ออกจากระบบ</button>
       </aside>
@@ -411,16 +495,52 @@ export default function Studio() {
         <div aria-live="polite">{status}</div>
         {!workspaceId && <section className="panel empty"><h2>เริ่มจากสร้างพื้นที่ทำงาน</h2><p>เพิ่มชื่อพื้นที่ทำงานเพื่อเริ่มจัดเก็บสินค้าและวิดีโอ</p></section>}
         {workspaceId && <>
+          {showingDiscovery && <ProductDiscovery key={`discover/${workspaceId}`} scope={scope} token={token}
+            products={products} request={api} onChoose={chooseProduct} />}
+          {(showingTrends || showingOffers || showingLinks) && <nav id="affiliate-journey" className="affiliate-journey"
+            aria-label="ขั้นตอนเลือกสินค้าและบันทึกลิงก์">
+            <a href="#trends" aria-current={showingTrends ? "step" : undefined}>1. เลือกเทรนด์</a>
+            <a href="#shopee-offers" aria-current={showingOffers ? "step" : undefined}>2. คัดสินค้า</a>
+            <a href="#affiliate-links" aria-current={showingLinks ? "step" : undefined}>3. ลิงก์ Affiliate</a>
+          </nav>}
+          <div hidden={!showingPurchases}>
+            <PurchasePreviews key={workspaceId} active={showingPurchases} scope={scope} token={token} request={api} />
+          </div>
+          <div hidden={!showingLinks}>
+            <AffiliateLinks key={workspaceId} active={showingLinks} busy={!!busy} scope={scope} revision={linkRevision}
+              token={token} onProduct={openReportProduct} request={api}
+              setup={showingLinks && affiliateJourney.offer && <AffiliateLinkSetup
+                key={`${workspaceId}/${affiliateJourney.offer.id}`}
+                autoStart={affiliateAutoStart} onAutoStartHandled={() => setAffiliateAutoStart(false)}
+                trend={affiliateJourney.trend} offer={affiliateJourney.offer}
+                scope={scope} token={token} request={api} products={products}
+                onBusy={(saving) => setBusy(saving ? "affiliate-journey" : "")}
+                onSave={(item) => {
+                  setProducts((current) => current.some((product) => product.id === item.id) ? current : [item, ...current]);
+                  selectProduct(item.id);
+                  setLinkRevision((revision) => revision + 1);
+                }}
+                onContinue={(item) => {
+                  selectProduct(item.id);
+                  openStoryboard("catalog", item.id, item.name);
+                }} />} />
+          </div>
           <div hidden={!showingResults}>
             <AffiliateResults key={workspaceId} active={showingResults} busy={!!busy} scope={scope}
               token={token} products={products} onProduct={openReportProduct} request={api} />
           </div>
           <div hidden={!showingOffers}>
-            <ShopeeOffers key={workspaceId} active={showingOffers} scope={scope} token={token} request={api} />
+            <ShopeeOffers key={workspaceId} active={showingOffers} scope={scope} token={token} request={api}
+              trend={affiliateJourney.trend} onStoryboard={(id, name) => openStoryboard("offer", id, name)}
+              onChooseOffer={(id, name) => chooseProduct({ kind: "offer", id, name }, affiliateJourney.trend)} />
           </div>
+          {showingStoryboards && <Storyboards key={workspaceId} scope={scope} token={token} request={api}
+            source={boardDraft?.workspace === workspaceId ? boardDraft : null} onCloseDraft={() => setBoardDraft(null)} />}
           <div hidden={!showingTrends}>
             <TrendExplorer key={workspaceId} active={showingTrends} scope={scope} token={token}
-              busy={!!busy} onProduct={openReportProduct} request={api} />
+              busy={!!busy} onProduct={openReportProduct} onPrepare={prepareReel}
+              onChooseTrend={(trend) => goToAffiliateStep({ trend, offer: null }, "shopee-offers")}
+              onStoryboard={(id, name) => openStoryboard("catalog", id, name)} request={api} />
           </div>
           <div className="studio-view" hidden={!showingWorkspace}>
           <section className="panel" id="products">
@@ -431,7 +551,7 @@ export default function Studio() {
                 <label>ชื่อสินค้า<input name="name" required maxLength={300} defaultValue={editingProduct?.name} /></label>
                 <label>ลิงก์สินค้า<input name="source_url" type="url" required maxLength={2083} defaultValue={editingProduct?.source_url} placeholder="https://" /></label>
                 <label>ลิงก์ Affiliate สำรอง<input name="affiliate_url" type="url" maxLength={2083} defaultValue={editingProduct?.affiliate_url ?? ""} placeholder="https://" /></label>
-                <label>สิทธิ์ใช้ภาพ<textarea name="image_rights_note" maxLength={2000} defaultValue={editingProduct?.image_rights_note ?? ""} rows={2} placeholder="เช่น ภาพถ่ายของร้านที่อนุญาตให้ใช้" /></label>
+                <label>สิทธิ์ใช้ภาพและวิดีโอ<textarea name="image_rights_note" maxLength={2000} defaultValue={editingProduct?.image_rights_note ?? ""} rows={2} placeholder="เช่น ภาพถ่ายของร้านที่อนุญาตให้ใช้" /></label>
                 <button className="primary" disabled={!!busy}>{busy === "product" ? "กำลังบันทึก…" : editingId ? "บันทึกการแก้ไข" : "เพิ่มสินค้า"}</button>
                 {editingId && <button type="button" className="text-button" onClick={() => setEditingId("")} disabled={!!busy}>ยกเลิกการแก้ไข</button>}
               </form>
@@ -486,13 +606,88 @@ export default function Studio() {
             </div>
           </section>}
           <section className="panel" id="video">
-            <div className="panel-head"><h2>วิดีโอแนวตั้ง</h2><span>9:16 · 15 วินาที</span></div>
+            <div className="panel-head"><h2 tabIndex={-1}>วิดีโอแนวตั้ง</h2><span>9:16 · 15 วินาที</span></div>
             <div className="columns">
               <div className="column">
-                <form onSubmit={createVideo}>
-                  <h3>เรนเดอร์จากภาพสินค้า</h3>
+                <form key={productId} onSubmit={createVideo}>
+                  <h3>สร้าง Reel จากฟุตเทจและภาพสินค้า</h3>
                   <p className="muted">{product ? product.name : "เลือกสินค้าในคลังสินค้าก่อน"}</p>
-                  <label>ภาพสินค้า 3 ภาพ<input name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple required /></label>
+                  {draft && !reelPlan.trim() && <fieldset disabled={!!busy} className="reel-script">
+                    <legend>สคริปต์ Reel</legend>
+                    <p className="muted">{draft.source === "trend" ? "เทรนด์" : "คำค้น"} · {draft.query}</p>
+                    <p className="muted">แก้ข้อความที่จะขึ้นบนจอได้ ฉากละไม่เกิน 3 บรรทัด</p>
+                    {draft.scenes.map((text, index) => <label key={sceneLabels[index]}>{sceneLabels[index]}
+                      <textarea name="scene_texts" required maxLength={120} rows={2} value={text}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setDraft({ ...draft, scenes: draft.scenes.map((scene, i) => i === index ? value : scene) });
+                        }} />
+                    </label>)}
+                    <button className="text-button" type="button" onClick={() => setDraft(null)}>นำสคริปต์ออก</button>
+                  </fieldset>}
+                  {product && !product.image_rights_note && <p className="muted">บันทึกสิทธิ์ใช้ฟุตเทจและภาพในคลังสินค้าก่อนเรนเดอร์</p>}
+                  <label>เพิ่มคลิปหรือภาพสินค้า
+                    <input type="file" accept=".mp4,.mov,image/jpeg,image/png,image/webp" multiple disabled={!!busy}
+                      onChange={(event) => {
+                        const next = [...mediaFiles, ...Array.from(event.currentTarget.files ?? [])];
+                        event.currentTarget.value = "";
+                        if (next.length > 12 || next.reduce((size, file) => size + file.size, 0) > 64 * 1024 * 1024) {
+                          setNotice({ text: "เพิ่มได้ไม่เกิน 12 ไฟล์ รวมไม่เกิน 64 MiB", error: true });
+                          return;
+                        }
+                        setMediaFiles(next);
+                        setNotice({ text: "", error: false });
+                      }} />
+                  </label>
+                  <p className="muted">ใช้คลิป MP4/MOV ร่วมกับภาพได้ แนะนำให้เปิดด้วยคลิปที่เห็นสินค้าชัด
+                    ถ้าใช้ภาพอย่างเดียวให้เลือก 4–12 ภาพ ถ้าใช้คลิปอย่างเดียวให้มีฟุตเทจรวมอย่างน้อย 15 วินาที
+                    ตัวอย่างไม่มีเสียงจากคลิปต้นฉบับ</p>
+                  {mediaFiles.length > 0 && <ol className="reel-media" aria-label="ลำดับไฟล์ใน Reel">
+                    {mediaFiles.map((file, index) => <li key={index}>
+                      <span><strong>A{index + 1}</strong> · {file.name}</span>
+                      {[-1, 1].map((direction) => <button key={direction} type="button" className="text-button"
+                        disabled={!!busy || index + direction < 0 || index + direction >= mediaFiles.length}
+                        aria-label={`${direction < 0 ? "เลื่อนขึ้น" : "เลื่อนลง"} ${file.name}`}
+                        onClick={() => {
+                          const target = index + direction;
+                          setMediaFiles((files) => {
+                            const next = [...files];
+                            [next[index], next[target]] = [next[target], next[index]];
+                            return next;
+                          });
+                        }}>{direction < 0 ? "ขึ้น" : "ลง"}</button>)}
+                      <button type="button" className="text-button" disabled={!!busy}
+                        aria-label={`นำ ${file.name} ออก`}
+                        onClick={() => setMediaFiles((files) => files.filter((_, position) => position !== index))}>นำออก</button>
+                    </li>)}
+                  </ol>}
+                  <details open={reelPlan ? true : undefined}>
+                    <summary>ตัดตามแผน Master Prompt v2</summary>
+                    <label>ไฟล์แผน JSON
+                      <input type="file" accept=".json,application/json" disabled={!!busy} onChange={async (event) => {
+                        const file = event.currentTarget.files?.[0];
+                        event.currentTarget.value = "";
+                        if (!file) return;
+                        if (file.size > 32_768) {
+                          setNotice({ text: "ไฟล์แผน JSON ต้องไม่เกิน 32 KiB", error: true });
+                          return;
+                        }
+                        const input = event.currentTarget;
+                        try {
+                          const contents = await file.text();
+                          if (input.isConnected) setReelPlan(contents);
+                        } catch {
+                          setNotice({ text: "เปิดไฟล์แผน JSON ไม่ได้", error: true });
+                        }
+                      }} />
+                    </label>
+                    <label>แผน Master Prompt v2 (JSON)
+                      <textarea rows={7} value={reelPlan} maxLength={32768} disabled={!!busy}
+                        onChange={(event) => setReelPlan(event.target.value)} />
+                    </label>
+                    <p className="muted">ใช้ A1–A12 ตามลำดับไฟล์ด้านบน แผนต้องเริ่มที่ 0 และจบที่ 15 วินาที
+                      รองรับภาพนิ่งและช่วงเวลาของคลิป ระบุซับใน subtitle_th เว้นแผนว่างเพื่อแบ่งเวลาอัตโนมัติ</p>
+                  </details>
                   <button className="primary" disabled={!!busy || !product?.image_rights_note}>{busy === "render" ? "กำลังเรนเดอร์…" : "สร้างวิดีโอ"}</button>
                 </form>
                 <label>ตัวอย่างที่บันทึกไว้<select value={renderId} onChange={(event) => selectRender(event.target.value)} disabled={!!busy}>
@@ -522,7 +717,7 @@ export default function Studio() {
               </div>
             </div>
           </section>
-          <MetaPublishing key={workspaceId} request={api} scope={scope} token={token}
+          <MetaPublishing key={`meta/${workspaceId}`} request={api} scope={scope} token={token}
             renderId={renderId} canPublishRender={render?.status === "completed" && !!video}
             productName={product?.name ?? ""} affiliateUrl={facebookAffiliate ?? product?.affiliate_url} />
           <Campaigns key={workspaceId} scope={scope} token={token} active={anchor === "campaigns"}

@@ -1,4 +1,5 @@
 import shutil
+import subprocess
 from io import BytesIO
 from pathlib import Path
 
@@ -44,7 +45,10 @@ def test_render_video_path_requires_artifact(tmp_path: Path, monkeypatch):
     not shutil.which("ffmpeg") or not shutil.which("ffprobe"),
     reason="FFmpeg and ffprobe are required for the real render test",
 )
-def test_mixed_images_render_to_valid_mp4(tmp_path: Path):
+@pytest.mark.parametrize("scenes", [None, ["กำลังมองหาอยู่ไหม?\nผ้าไมโครไฟเบอร์",
+                                          "ผ้าเช็ดครัว Scotch-Brite",
+                                          "ดูรายละเอียดสินค้าก่อนตัดสินใจ"]])
+def test_mixed_images_render_to_valid_mp4(tmp_path: Path, scenes):
     inputs = []
     for index, (kind, mime, color) in enumerate(
         (
@@ -60,6 +64,16 @@ def test_mixed_images_render_to_valid_mp4(tmp_path: Path):
         inputs.append(path)
 
     output = tmp_path / "preview.mp4"
-    _render(inputs, output)
+    _render(inputs, output, scenes)
 
     assert output.is_file() and output.stat().st_size > 1024
+    if scenes:
+        for second in (2, 7, 12):
+            frame = subprocess.run(
+                ["ffmpeg", "-v", "error", "-ss", str(second), "-i", str(output),
+                 "-frames:v", "1", "-f", "image2pipe", "-vcodec", "png", "-"],
+                check=True, capture_output=True,
+            )
+            with Image.open(BytesIO(frame.stdout)) as image:
+                region = image.convert("L").crop((110, 1400, 970, 1650))
+                assert sum(region.histogram()[220:]) > 250

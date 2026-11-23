@@ -39,17 +39,48 @@ Studio deduplicates clicks by Click ID and upserts order lines by Order ID and i
 
 ## Find Thai trends
 
+The Studio navigation follows **เลือกเทรนด์ → คัดสินค้า → ลิงก์ Affiliate**. Choose a trend to prefill the Shopee keyword. Adjust that keyword, the minimum sales and the minimum commission, then choose an offer to open its link setup. Studio carries the selected trend and offer in the current browser tab, scoped to the workspace.
+
+From link setup, open the selected offer in Shopee and paste its product URL into Studio. Copy it to Shopee's link tool with the chosen Sub ID, then paste the generated affiliate link back into the same Studio form and save it by channel. Studio reuses the existing catalog product if the listing is already saved. The saved links remain available under **ลิงก์ที่บันทึกไว้ทั้งหมด**.
+
 Open **Google Trends** in Studio. Browse Thailand’s Trending Now RSS for the last 4 or 24 hours, filter by keyword, or show only trends with a product match. Studio highlights the matching words in saved Shopee product names from the current workspace. Select a match to open its inventory record.
 
 Use **จับคู่คำค้นเอง** to check a phrase against the inventory and open it in Google Trends Explore. The Trending Now feed provides approximate search volumes and does not include a category field. The API caches the feed for 10 minutes and labels cached results when a refresh fails. The manual lookup uses the bundled Thai dictionary and works independently of the feed.
 
 **อันดับโอกาสสินค้า** lists the top five distinct products for the selected trends. If a product matches several visible trends, its highest-scoring match is shown. The 100-point score combines estimated search volume (25), keyword overlap and a phrase bonus (35), imported clicks (15), and imported unique orders (25). Volume components scale logarithmically and cap at 100,000 searches, 100 clicks and 20 orders. Report history covers the last 30 calendar days including today in Bangkok time. The score uses reports linked to one saved product by Sub ID and channel, and excludes cancelled or unpaid orders. Missing data contributes zero points and is labelled separately from a recorded zero. Manual search shows relevance only.
 
-## Shopee product discovery
+Select **เตรียม Reel** on a ranked product, trend match, or manual match to open its video form with a three-scene script. Edit the on-screen text and assemble up to 12 product clips and photos with documented usage rights. For a photo-only preview, select 4–12 views. For video-only, supply at least 15 seconds of footage. Reorder the sources in Studio. It gives more screen time to motion where available and keeps the full source frame visible. Source audio is muted. Studio uses FFmpeg to burn the text into the 15-second preview and saves the MP4 under **ตัวอย่างที่บันทึกไว้**. The editable script stays in the current session. Captioned rendering requires FFmpeg with libass and a Thai font. Staging installs Noto Sans Thai, and macOS uses Sukhumvit Set.
+
+For a planned edit, expand **ตัดตามแผน Master Prompt v2**, upload or paste the JSON, and order the media to match the displayed IDs `A1`–`A12`. The renderer uses a contiguous 15-second timeline, `REAL_PHOTO` or `REAL_VIDEO` sources, `cut` or `hold`, verified source time ranges for clips, and `subtitle_th` by shot. A plan with `ready_for_preview` or `review_required` can render. Use already prepared files for crop effects or B-roll. Empty the JSON field to use automatic timing.
+
+## Preview a previously purchased product
+
+Open **Reel จากสินค้าที่เคยซื้อ** and register a product after checking that the Shopee purchase was completed. Provide the product page, a direct Shopee image URL and two direct image URLs selected from search results on supported image hosts. Select the item and click **เก็บภาพและสร้างตัวอย่าง**. Studio downloads the three images, keeps the originals by source under `RENDER_ROOT/Asset/<workspace>/<product>/runs/<preview>`, and renders a private 15-second MP4. Each run uses a separate folder. These previews are kept separate from the publication workflow while image rights are being verified.
+
+After the product preview has saved its photos, use **นำเข้าช็อตเปิดจาก Google Flow (MP4)** to upload a clip of up to 48 MiB and optionally add an opening caption. Studio uses up to the first four seconds, follows them with two saved product photos, and saves the 15-second preview and the source MP4 in the run folder. The composition is muted. The import requires a downloaded MP4 and uses no Google API.
+
+Select **เปิดด้วยภาพสินค้าจริง แล้วแทรกช็อตจาก Flow** to start with a saved product photo. Studio places up to three seconds of Flow footage after four seconds of the real photo, then finishes with the remaining saved product photos.
+
+For an operator-assisted collection run, the workspace API accepts the verified completed purchase and selected image sources at `POST /api/v1/workspaces/{workspace_id}/purchase-previews/collect-and-render`. It registers the product, collects the assets and builds its preview in one request. The completed run retains its own source manifest.
+
+The local Safari extension in `apps/safari-extension` enables **ดึงจาก Safari และสร้างตัวอย่าง** when Studio is open at `http://127.0.0.1:3014/#purchase-previews`. Safari must already be signed in to Shopee and grant the extension access to Studio, Shopee and Google Search. The extension opens a temporary tab and looks for one completed household purchase with a recognizable model and three matching photos. Studio keeps its session token on the local page and uses it to submit the collected product and image URLs to the preview endpoint.
+
+### Shopee product discovery
 
 In Studio, open **สินค้าขายดีและค่าคอม**. It ranks the workspace's Shopee Affiliate offers using the sales count shown by Shopee and the displayed commission rate. The default filters are at least 100 units sold and 5% commission. The combined sort uses `log10(1 + displayed sales) × commission rate`. You can also sort by sales, commission rate, or estimated commission in THB per unit. A sales count with `+` is a lower bound. The amount in THB is an estimate based on the displayed price and rate.
 
-For refreshes, open [Shopee Affiliate Product Offers](https://affiliate.shopee.co.th/offer/product_offer) in Safari and search or pick a Shopee category. With Safari extension 0.2.0 and access granted to that page and local Studio, click **ดึงข้อเสนอจาก Safari**. It reads cards with all three values on the open results page. Studio updates matching offer IDs in the workspace. You can also enter details from an individual offer. Google Trends remains available from the ranking page.
+The Studio home page shows product matches from Google Trends Thailand and saved Shopee offers in the current workspace. The Shopee shelf defaults to estimated baht per order. It uses the observed price multiplied by the observed commission rate. On mobile, **ไปที่สินค้าค่าคอมสูง** jumps straight to that shelf.
+
+For refreshes, open [Shopee Affiliate Product Offers](https://affiliate.shopee.co.th/offer/product_offer) in Safari and search or pick a Shopee category. With Affiliate Studio Capture 0.4.0 enabled and access granted to that site and local Studio, click **ดึงข้อเสนอจาก Safari** on **คัดสินค้า Shopee**. Studio updates matching offer IDs and includes the product image when the offer card exposes a supported image URL. Existing offers remain selectable and can pick up images on refresh.
+
+**เลือกสินค้านี้** checks for an existing link for the selected product, starting with Facebook. If no link exists and Safari Capture 0.4.0 is available on `http://127.0.0.1:3014`, it opens Shopee's custom link form with the product URL and Sub ID filled in. Sign in to Shopee Affiliate and click **เอา ลิงก์** there. Studio saves the returned link against the selected product and channel. The manual form remains available in browsers without the extension. **เตรียม Storyboard** opens the existing workflow for the same saved catalog product.
+
+### Prepare a still storyboard in Google Flow
+
+1. Use **เตรียม Storyboard** beside a ranked Shopee offer or Google Trends match. Confirm the exact variant, add verified details and the two reference photos, and save the shot plan. Plans and images are stored under the workspace in `RENDER_ROOT/storyboards`.
+2. For the Safari handoff, open Studio at `http://127.0.0.1:3014` with Affiliate Studio Capture 0.4.0 enabled. Sign in to Flow and give the extension access to local Studio and `flow.google.com`. Enter the Flow project or collection link once for the workspace, then click **สร้าง Storyboard ภาพนิ่งใน Flow**. Safari attaches both references and enters the prompt in Image mode at 9:16 with one output. If Flow waits for a direct click, click **เริ่มสร้าง** in the Flow tab once. Keep both tabs open while Studio checks for and loads the matching still for review.
+3. For manual handoff, click **คัดลอกพรอมป์และเปิด Flow**, paste it and attach the two references, then download and import the result. In either workflow, compare each photorealistic panel with the references before approval.
+
 
 ## Connect a local Facebook Page
 

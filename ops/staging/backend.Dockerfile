@@ -4,7 +4,7 @@ FROM python:3.12-slim-bookworm
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 UV_PROJECT_ENVIRONMENT=/opt/venv \
     PYTHAINLP_READ_ONLY=1 PYTHAINLP_OFFLINE=1
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg gosu \
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg fonts-noto-core gosu \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --no-create-home --uid 10001 studio \
     && install -d -o studio -g studio /var/lib/studio/renders

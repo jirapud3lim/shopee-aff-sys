@@ -25,11 +25,15 @@ function visibleOffers() {
     const sale = lines.map(displayedSales).find(Boolean);
     const rate = lines.map((line) => line.match(/^อัตราค่าคอมมิชชัน\s*([\d]+(?:\.\d{1,2})?)\s*%$/)).find(Boolean);
     if (!price || !sale || !rate) continue;
+    const image = card.querySelector("img");
+    const imageUrl = image?.currentSrc || image?.src;
     offers.set(offerId, {
       offer_id: offerId,
       name: [...lines[priceIndex - 1]].slice(0, 300).join(""),
       price_satang: Math.round(Number(price[1].replaceAll(",", "")) * 100),
       commission_bps: Math.round(Number(rate[1]) * 100),
+      ...(/^https:\/\/(down-th\.img\.susercontent\.com|cf\.shopee\.co\.th)\//.test(imageUrl ?? "")
+        ? { image_url: imageUrl } : {}),
       ...sale,
     });
     if (offers.size === 100) break;

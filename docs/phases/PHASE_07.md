@@ -34,6 +34,7 @@
 - [x] Rank products by trend volume, keyword relevance, and the last 30 Bangkok calendar days of attributable clicks and unique orders from Shopee CSVs. Show the component scores and underlying data.
 - [x] Display source timestamp, freshness and approximate search volume.
 - [x] Offer manual keyword lookup and let operators open a suggested product for review.
+- [x] Open an editable Reel script from a ranked product and render a three-scene FFmpeg preview.
 
 ### AI content pipeline
 - [ ] Implement optional Gemini text provider for captions/scripts/storyboards/prompts.

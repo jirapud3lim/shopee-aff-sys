@@ -22,7 +22,7 @@ from pydantic import (
     ValidationError,
     field_validator,
 )
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint, select
+from sqlalchemy import ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint, null, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
@@ -87,6 +87,14 @@ class ChannelLinkInput(BaseModel):
 class ChannelLinkOut(ChannelLinkInput):
     model_config = ConfigDict(from_attributes=True)
     channel: Channel
+
+
+class WorkspaceAffiliateLink(BaseModel):
+    product_id: str
+    product_name: str
+    channel: str | None
+    sub_id: str | None
+    affiliate_url: str
 
 
 def canonical_source_url(value: str) -> str:
@@ -210,6 +218,28 @@ def create_product(
         raise _duplicate_error() from exc
     db.refresh(product)
     return ProductOut.from_product(product)
+
+
+@router.get("/affiliate-links", response_model=list[WorkspaceAffiliateLink])
+def list_affiliate_links(
+    workspace_id: str,
+    context: Any = Depends(require_workspace),
+    db: Session = Depends(get_db),
+):
+    workspace = _workspace_id(context)
+    product = (Product.id.label("product_id"), Product.name.label("product_name"))
+    channel_links = (
+        select(*product, ChannelLink.channel, ChannelLink.sub_id, ChannelLink.affiliate_url)
+        .join_from(Product, ChannelLink)
+        .where(Product.workspace_id == workspace)
+    )
+    fallback_links = select(
+        *product, null().label("channel"), null().label("sub_id"), Product.affiliate_url,
+    ).where(Product.workspace_id == workspace, Product.affiliate_url.is_not(None))
+    links = channel_links.union_all(fallback_links).subquery()
+    return db.execute(select(links).order_by(
+        links.c.product_name, links.c.product_id, links.c.channel.asc().nulls_last(),
+    )).mappings().all()
 
 
 @router.get("/{product_id}", response_model=ProductOut)

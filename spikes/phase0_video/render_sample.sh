@@ -12,6 +12,10 @@ command -v ffmpeg >/dev/null || { echo "ffmpeg not found" >&2; exit 3; }
 command -v ffprobe >/dev/null || { echo "ffprobe not found" >&2; exit 3; }
 
 OUT="${4:-out_15s.mp4}"
+CAPTIONS=""
+if [ "${5:-}" = "--captions" ]; then
+  CAPTIONS=",ass=filename=captions.ass"
+fi
 W=1080; H=1920; FPS=30; SEG=6; XF=1
 
 kb() { # input index -> ken-burns zoom-in clip, SEG seconds
@@ -26,7 +30,7 @@ ffmpeg -y \
   -filter_complex "$(kb 0);$(kb 1);$(kb 2);\
 [v0][v1]xfade=transition=fade:duration=${XF}:offset=$((SEG-XF))[x1];\
 [x1][v2]xfade=transition=fade:duration=${XF}:offset=$((2*SEG-2*XF))[x2];\
-[x2]trim=duration=15,setpts=PTS-STARTPTS[vout]" \
+[x2]trim=duration=15,setpts=PTS-STARTPTS${CAPTIONS}[vout]" \
   -map "[vout]" -map 3:a \
   -c:v libx264 -profile:v high -pix_fmt yuv420p -r "$FPS" -g $((FPS*2)) -keyint_min $((FPS*2)) -sc_threshold 0 \
   -c:a aac -b:a 128k -ar 48000 -ac 2 \

@@ -16,12 +16,16 @@ type OfferInput = {
   sold_is_minimum: boolean;
   price_satang: number;
   commission_bps: number;
+  image_url?: string | null;
 };
-type Offer = OfferInput & { observed_at: string };
+export type Offer = OfferInput & { observed_at: string };
 type Props = {
   active: boolean;
   scope: string;
   token: string;
+  onStoryboard: (id: string, name: string) => void;
+  trend: string;
+  onChooseOffer: (id: string, name: string) => void;
   request: <T>(path: string, token: string, init?: RequestInit) => Promise<T>;
 };
 
@@ -33,11 +37,11 @@ const sortOptions = {
 } as const;
 type Sort = keyof typeof sortOptions;
 
-function visiblePrice(offer: Offer) {
+export function visiblePrice(offer: Offer) {
   return offer.price_satang / 100;
 }
 
-function estimatedCommission(offer: Offer) {
+export function estimatedCommission(offer: Offer) {
   return visiblePrice(offer) * offer.commission_bps / 10_000;
 }
 
@@ -59,13 +63,15 @@ function readOfferId(input: string) {
   return match[1];
 }
 
-export default function ShopeeOffers({ active, scope, token, request }: Props) {
+export default function ShopeeOffers({ active, scope, token, request, onStoryboard, trend, onChooseOffer }: Props) {
   const path = scope + "/shopee-offers";
   const [offers, setOffers] = useState<Offer[]>([]);
   const [minimumSales, setMinimumSales] = useState("100");
   const [minimumRate, setMinimumRate] = useState("5");
   const [sort, setSort] = useState<Sort>("balanced");
-  const [search, setSearch] = useState("");
+  const [searchOverride, setSearchOverride] = useState<{ trend: string; value: string } | null>(null);
+  const search = searchOverride?.trend === trend ? searchOverride.value : trend;
+  const setSearch = (value: string) => setSearchOverride({ trend, value });
   const [requestId, setRequestId] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -162,8 +168,55 @@ export default function ShopeeOffers({ active, scope, token, request }: Props) {
     left.offer_id.localeCompare(right.offer_id));
 
   return <div id="shopee-offers" className="trend-explorer">
-    <header className="workspace-header"><h1 tabIndex={-1}>สินค้าขายดีและค่าคอม</h1></header>
+    <header><h1 tabIndex={-1}>คัดสินค้า Shopee</h1>
+      {trend && <p className="muted">เทรนด์ที่เลือก <strong>{trend}</strong> · ปรับคำค้นสินค้าให้ตรงกับของที่ต้องการได้</p>}
+    </header>
     <section className="panel">
+      <div className="panel-head"><h2>จัดอันดับสินค้า</h2><a href="#trends">กลับไปที่เทรนด์</a></div>
+      <div className="trend-filters">
+        <label>คำค้นสินค้า<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
+        <label>ยอดขายขั้นต่ำ (ชิ้น)<input type="number" min="0" value={minimumSales}
+          onChange={(event) => setMinimumSales(event.target.value)} /></label>
+        <label>ค่าคอมขั้นต่ำ (%)<input type="number" min="0" max="100" step="0.01" value={minimumRate}
+          onChange={(event) => setMinimumRate(event.target.value)} /></label>
+        <label>เรียงตาม<select value={sort} onChange={(event) => setSort(event.target.value as Sort)}>
+          {Object.entries(sortOptions).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select></label>
+      </div>
+      <p className="muted">แสดง {numbers.format(matches.length)} จาก {numbers.format(offers.length)} รายการ ·
+        ยอดขายตามที่ Shopee แสดงโดยไม่ระบุช่วงเวลา · ค่าคอมต่อชิ้นเป็นค่าประมาณจากราคา × อัตราที่แสดง
+        ยอดจ่ายจริงขึ้นอยู่กับเงื่อนไขของ Shopee</p>
+      {sort === "balanced" && <p className="muted">อันดับแบบผสมใช้ log₁₀(1 + ยอดขาย) × อัตราค่าคอม
+        เพื่อให้ยอดขายและค่าคอมมีผลต่ออันดับทั้งคู่</p>}
+      {loading ? <p role="status">กำลังโหลดข้อเสนอ…</p> : matches.length ? <ol className="offer-list">
+        {matches.map((offer) => <li key={offer.offer_id}>
+          <div><h3>{offer.name}</h3>
+            <p className="muted">เห็นข้อมูลเมื่อ {dates.format(Date.parse(offer.observed_at))}</p>
+            <div className="affiliate-setup-actions">
+              <button type="button" className="primary" onClick={() => onChooseOffer(offer.offer_id, offer.name)}
+                aria-label={`เลือกสินค้า ${offer.name}`}>เลือกเพื่อสร้างลิงก์</button>
+              <a href={portal + "/" + offer.offer_id} target="_blank" rel="noreferrer">ดูข้อเสนอ</a>
+            </div>
+            <details><summary>งานคอนเทนต์</summary>
+              <button type="button" className="text-button" onClick={() => onStoryboard(offer.offer_id, offer.name)}>เตรียม Storyboard</button>
+            </details>
+          </div>
+          <dl className="offer-metrics">
+            <div><dt>ขายได้</dt><dd>{numbers.format(offer.sold)}{offer.sold_is_minimum ? "+" : ""} ชิ้น</dd></div>
+            <div><dt>ราคา</dt><dd>{currency.format(visiblePrice(offer))}</dd></div>
+            <div><dt>ค่าคอม</dt><dd>{numbers.format(offer.commission_bps / 100)}%</dd></div>
+            <div><dt>ค่าคอมโดยประมาณ</dt><dd>{currency.format(estimatedCommission(offer))}/ชิ้น</dd></div>
+          </dl>
+        </li>)}
+      </ol> : <div>
+        <p>{offers.length ? "ไม่มีข้อเสนอที่ตรงกับตัวกรอง" : "ยังไม่มีข้อเสนอในพื้นที่ทำงาน เปิดส่วน “นำเข้าข้อเสนอจาก Shopee” ด้านล่างเพื่อเริ่ม"}</p>
+        {keyword && !!offers.length && <button type="button" className="text-button" onClick={() => setSearch("")}>
+          ล้างคำค้นสินค้า
+        </button>}
+      </div>}
+    </section>
+    <details className="panel workflow-details">
+      <summary>นำเข้าข้อเสนอจาก Shopee</summary>
       <div className="panel-head">
         <h2>ข้อเสนอจาก Shopee Affiliate</h2>
         <a href={portal} target="_blank" rel="noreferrer">เปิดข้อเสนอผลิตภัณฑ์</a>
@@ -187,38 +240,6 @@ export default function ShopeeOffers({ active, scope, token, request }: Props) {
       </details>
       {busy && <p role="status">กำลังบันทึกหรืออ่านข้อเสนอ…</p>}
       {notice && <p role={notice.error ? "alert" : "status"}>{notice.message}</p>}
-    </section>
-    <section className="panel">
-      <div className="panel-head"><h2>จัดอันดับสินค้า</h2><a href="#trends">เทียบกับ Google Trends</a></div>
-      <div className="trend-filters">
-        <label>ค้นในข้อเสนอ<input value={search} onChange={(event) => setSearch(event.target.value)} /></label>
-        <label>ยอดขายขั้นต่ำ (ชิ้น)<input type="number" min="0" value={minimumSales}
-          onChange={(event) => setMinimumSales(event.target.value)} /></label>
-        <label>ค่าคอมขั้นต่ำ (%)<input type="number" min="0" max="100" step="0.01" value={minimumRate}
-          onChange={(event) => setMinimumRate(event.target.value)} /></label>
-        <label>เรียงตาม<select value={sort} onChange={(event) => setSort(event.target.value as Sort)}>
-          {Object.entries(sortOptions).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select></label>
-      </div>
-      <p className="muted">แสดง {numbers.format(matches.length)} จาก {numbers.format(offers.length)} รายการ ·
-        ยอดขายตามที่ Shopee แสดงโดยไม่ระบุช่วงเวลา · ค่าคอมต่อชิ้นเป็นค่าประมาณจากราคา × อัตราที่แสดง
-        ยอดจ่ายจริงขึ้นอยู่กับเงื่อนไขของ Shopee</p>
-      {sort === "balanced" && <p className="muted">อันดับแบบผสมใช้ log₁₀(1 + ยอดขาย) × อัตราค่าคอม
-        เพื่อให้ยอดขายและค่าคอมมีผลต่ออันดับทั้งคู่</p>}
-      {loading ? <p role="status">กำลังโหลดข้อเสนอ…</p> : matches.length ? <ol className="offer-list">
-        {matches.map((offer) => <li key={offer.offer_id}>
-          <div><h3>{offer.name}</h3>
-            <p className="muted">เห็นข้อมูลเมื่อ {dates.format(Date.parse(offer.observed_at))}</p>
-            <a href={portal + "/" + offer.offer_id} target="_blank" rel="noreferrer">ตรวจข้อเสนอใน Shopee</a>
-          </div>
-          <dl className="offer-metrics">
-            <div><dt>ขายได้</dt><dd>{numbers.format(offer.sold)}{offer.sold_is_minimum ? "+" : ""} ชิ้น</dd></div>
-            <div><dt>ราคา</dt><dd>{currency.format(visiblePrice(offer))}</dd></div>
-            <div><dt>ค่าคอม</dt><dd>{numbers.format(offer.commission_bps / 100)}%</dd></div>
-            <div><dt>ค่าคอมโดยประมาณ</dt><dd>{currency.format(estimatedCommission(offer))}/ชิ้น</dd></div>
-          </dl>
-        </li>)}
-      </ol> : <p>{offers.length ? "ไม่มีข้อเสนอที่ตรงกับตัวกรอง" : "ยังไม่มีข้อมูลข้อเสนอในพื้นที่ทำงาน"}</p>}
-    </section>
+    </details>
   </div>;
 }

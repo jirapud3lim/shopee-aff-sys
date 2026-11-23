@@ -1,5 +1,153 @@
 # Session handoff
 
+## JUDYDOLL #01 WAVE still storyboard (2026-11-23)
+
+- Verified the single JUDYDOLL HIGHLIGHT & CONTOUR 9g #01 WAVE Upgraded Version in the Shopee variant picker. Downloaded the matching original from the Shopee image CDN. Used it as the only reference for a 15-second product-only storyboard with no presenter.
+- In the [JUDYDOLL Flow project](https://flow.google.com/project/d1948698-0b1a-432c-a29c-daa5cc0e7a11), set Flow Agent image defaults to 9:16 with one output and requested shots 01–04 as separate still images. Reviewed all four for photorealism, one compact, the peach-pink lid, the correct four pans where fully framed, and both left highlights in the macro. Embossing and lettering vary slightly in the generated stills.
+- Preserved the downloaded 768 × 1376 originals and checked the 765 × 1360 review copies for exact 9:16 and one frame each. The source, shot plan, individual stills, and review sheet are in `backend/.local/judydoll-01-wave-storyboard/`. The storyboard is saved in Flow. Studio's draft form requires a presenter image. Awaiting explicit approval of the presented stills. No video generation or publication was requested.
+
+## Live Safari Affiliate handoff passed (2026-11-23)
+
+- With explicit authorization, set Safari Capture 0.4.0 to Allow for `127.0.0.1` and `affiliate.shopee.co.th` only. Verified the other listed sites still showed Ask.
+- Selected the real JUDYDOLL HIGHLIGHT & CONTOUR 9g offer without a saved link. Safari opened the official custom-link form and prefilled the exact listing `1225687272/25923634164` and Sub ID `facebook25923634164`. Clicked **เอา ลิงก์** once. Studio showed the same short URL as Shopee, and a read-only SQLite query confirmed it was persisted for the JUDYDOLL product and Facebook channel.
+- Opened the existing Storyboard form for JUDYDOLL and verified its title. Left Safari there and the loopback Studio servers running. The proxied API health check returned OK.
+
+## Live Safari Affiliate test setup (2026-11-23)
+
+- Upgraded the empty default local SQLite database to `73328a4a6c1f`. Alembic reported no drift. Started the production frontend and local API on loopback ports 3014 and 8001. The proxied health endpoint reported OK. Left both running for the user.
+- Opened Studio in Safari and created a local trial workspace. Imported the observed JUDYDOLL HIGHLIGHT & CONTOUR 9g Shopee offer (item `25923634164`) manually into the workspace. Verified the home card and its missing Facebook link. Zero channel links existed before the live test.
+- Safari Capture 0.4.0 is enabled and Safari showed Ask for `127.0.0.1` and `affiliate.shopee.co.th`. Requested confirmation to grant those two website permissions. The live generated-link callback, save and same-product Storyboard remain pending. Studio is open at the product discovery page.
+
+## Studio product discovery home (2026-11-23)
+
+- Implemented option A as the signed-in Studio home, with the Thailand trend-matched shelf, saved Shopee commission shelf, estimated baht per order sorting and a mobile jump. Added optional offer thumbnails in migration `73328a4a6c1f`. Existing offer snapshots work without images.
+- Selection looks up the product's saved Affiliate link in the active workspace, defaulting to Facebook. When the link is missing, Safari Capture 0.4.0 starts the official custom link form with the exact listing and Sub ID filled in. After the operator clicks **เอา ลิงก์**, the bridge captures the new short link and Studio saves it against the selected item and channel. The manual form remains available. Both paths hand off to the existing catalog Storyboard.
+- Verified the real Shopee listing, Sub ID form and returned short link by hand in Safari. Safari 0.4.0 was loaded for testing, but the new copy requires website access to local Studio and Shopee Affiliate before live bridge verification. The browser QA with an isolated API and simulated Safari bridge verified automatic initiation, callback, save and the same-product Storyboard. Also verified the existing link, wrong-product rejection, manual creation, sorting and mobile jump at 390 px.
+- Backend pytest passed 22 tests with 3 FFmpeg-dependent skips. SQLite Alembic upgrade and drift check, Next.js webpack production build, extension syntax and fixture checks, and `git diff --check` passed.
+
+## Four product discovery UI concepts (2026-11-23)
+
+- Researched Webby-winning work by lululemon, Pinterest Predicts, NBC Big Board, and DVF Shopping Journey. Gemini Canvas returned errors. Google AI Studio Build confirmed Gemini 4 Neon and generated the [interactive comparison](https://aistudio.google.com/apps/1b395640-8fae-4271-bb9a-7d2e878c8e45?showPreview=true&showAssistant=true&fullscreenApplet=true) with four Thai layouts on a shared mock catalog.
+- Verified desktop switching across A–D, inspected the mobile view of A, and tested both the existing link and simulated link creation through the corresponding Storyboard summary. The prototype uses fictional data and performs no real Shopee or Flow operation. Studio application code is unchanged.
+
+## Start-of-day status (2026-11-23)
+
+- Phase 7 remains active. The latest verified live trend trial reached the saved GAMBOL LM11005 Facebook Affiliate link. The GAMBOL voice revision is ready for preview review, with shot 01 still silent. SMEG ASMR awaits storyboard approval.
+- No Studio listeners were present at the time of this check. Local health requests with proxy bypass could not connect on ports 3000, 3014, 8001 or 8014.
+- Backend pytest in the existing virtual environment with `PYTHAINLP_OFFLINE=1` passed 22 tests and skipped 3 real-media tests because FFmpeg and ffprobe were unavailable on PATH. `npm run typecheck --prefix apps/web` and `git diff --check` passed. The branch has uncommitted work from previous sessions.
+
+## Local server check (2026-11-23)
+
+- On request, sent SIGTERM to all 18 identified project listeners, including the Studio web, API, Meta OAuth spike, and QA instances. A follow-up `lsof` showed only macOS and Logitech listeners.
+- `curl` returned HTTP 200 for the Studio home page on ports 3000 and 3014. `/api/v1/health` returned `{"status":"ok"}` through both web ports and directly on API ports 8001 and 8014.
+
+## GAMBOL LM11005 voice revision preview (2026-11-23)
+
+- Used the approved start frames and Veo 3.1 Lite at 9:16 to try spoken retakes of shots 01 and 02. Flow audio synthesis failed for both the existing shot 01 line and the separately approved alternative. Shot 02 rendered speech and mouth motion in the same take, and local Thai transcription recovered the letters LM and all five digits in order.
+- Exported `GAMBOL-LM11005-review-scene-02-voice.mp4` in the product's `video-preview` folder. It runs 18.50 seconds to retain the full model-number reading. Keeps the existing silent opening and the silent shots 03–04. Frame checksums for shots 03–04 match the previous preview. No Reel was posted.
+
+## GAMBOL LM11005 approved storyboard video preview (2026-11-23)
+
+- Generated and downloaded scenes 01–04 in the [existing Flow project](https://flow.google.com/project/49dc28b5-7a32-4143-a11f-0747280bf37d) using Veo 3.1 Lite and vertical 9:16 start frames from the approved black BK-LV05 storyboard. Flow Agent could not synthesize scene 01 audio. Recovered the clip through Flow Frames with the user-approved muted output setting, then verified that the setting was restored to off.
+- Stitched the four shots in storyboard order and verified a 15.00-second H.264 preview at 720 × 1280. The red LFC patch is legible in the sampled scene 03 frame. The preview is silent because scene 01 has no speech and scene 02 mispronounces LM11005. The preview and source clips are in the product's `video-preview` asset folder. No Reel was posted.
+
+## SMEG ASMR unboxing storyboard (2026-11-23)
+
+- Regenerated stills 04 and 06 using the catalog photo. In 04 the left hand steadies the base from the left and the right hand reaches the cap from the right. Reviewed both stills for the spaced silver SMEG lettering. These are generated approximations of the reference. Awaiting approval of the two revised stills before any video generation.
+- Used the existing SMEG Flow Agent project and catalog image to create six portrait stills for a 25-second hands-only Shopee storyboard. Revised panels 02, 03 and 05 for numbering and continuity. Checked the final contact sheet against the catalog for the bottle profile, pastel-blue color and silver cap. Some fine lettering still varies, and the generic kraft carton is a staging prop because retail packaging was unavailable. Awaiting user approval of the displayed stills. No video or audio was generated.
+
+## GAMBOL storyboard scene 03 revision
+
+- Cropped the black BK-LV05 strap and red LFC patch directly from the saved Shopee listing photo. Replaced only scene 03 and preserved its number and the gutters in a lossless PNG. Pixel comparison against the original verified that scenes 01, 02 and 04 are unchanged.
+- Uploaded and verified the [revised still](https://flow.google.com/project/49dc28b5-7a32-4143-a11f-0747280bf37d/edit/23a89ae8-e23a-4101-9b3e-329a5c75ef00) in the original GAMBOL project. Awaiting review of the revised image. No video generation or posting was requested.
+
+## GAMBOL Liverpool FC storyboard
+
+- Selected the black BK-LV05 variant for the linked LM11005 offer. Used the actual Shopee Affiliate product photo and the existing presenter reference to generate one photorealistic [four-scene still in Flow](https://flow.google.com/project/49dc28b5-7a32-4143-a11f-0747280bf37d/edit/fd801d79-af65-4f0e-80f4-07cecbe93165). The close-up shows the correct black shape, red tag and white sole edge, with small lettering on the tag differing from the product photo.
+- Saved the 768 × 1376 original to the product assets and verified a byte-identical readback from the linked Studio storyboard. The still is awaiting review. No video or publication was requested.
+
+## Gadget unboxing references (2026-11-23)
+
+- Searched for ASMR gadget unboxing channels and checked indexed YouTube channel and video descriptions. References include [The Unboxing ASMR](https://www.youtube.com/@TheUnboxingAsmr), [Unbox Lab](https://www.youtube.com/@asmrunboxingtechlab), and [ASMR Unboxing](https://www.youtube.com/@ASMRUnboxingOfficial). Direct video playback was unavailable during the search. No code changes.
+- Applied the international channel filter of more than 100,000 subscribers. Verified public counts for TheRelaxingEnd (9.67M), Dr Debox (1.24M), Tech Unboxing (1.08M), and ASMR Unboxing (103K) and located examples of gadget unboxing for each.
+- Shortlisted five YouTube Shorts with roughly 1.4M–23.8M cumulative views from international channels over 100K subscribers. The [DJI Osmo Pocket 4 Short](https://www.youtube.com/shorts/kEbC55D2NPY) is the closest reference for a small Shopee gadget, and the [ASUS ROG Phone 5 Short](https://www.youtube.com/shorts/CjHe8gN-hAU) covers premium packaging. Counts and formats were sourced from indexed YouTube metadata and public trackers.
+- Reviewed frames across the 34.24-second DJI Short and drafted a 25-second Shopee shot list. The source uses an overhead unboxing, brief accessory inserts and a held product shot from roughly 27 seconds. Audio cues for the Shopee shot list are recording suggestions based on visible actions. The original audio track was unavailable for direct review.
+
+## Live trend-to-Affiliate trial (2026-11-23)
+
+- Connected the isolated Studio to the official Thai Google Trends RSS using the macOS CA bundle with TLS verification enabled. Selected the live Florian Wirtz trend (2,000+ searches), searched Liverpool in Shopee Affiliate, and imported three observed offers. The Studio filter used at least 1,000 sales and 7% commission and returned the GAMBOL Liverpool FC LM11005 offer, which showed 2,000+ sold at THB 165 and 7% commission.
+- Followed the selected offer from Studio, generated a tagged short link in Shopee's advanced link form, and saved it back to the same Studio product for Facebook with Sub ID `fblfcgambol01`. Verified readback in Safari and through the Studio API. This run used the existing isolated Studio workspace with real provider data. No video generation or posting was requested.
+
+## Studio trend-to-Affiliate workflow
+
+- Connected the Trends, Shopee offer filters and Affiliate setup pages. The selected trend pre-populates the offer query, and the selected offer carries through to the Shopee detail link and Studio form. The selection is scoped to the workspace and survives reload in the same browser tab. Studio reuses the catalog record for the same Shopee listing and saves each channel link through the existing API.
+- Verified both a controlled Trends feed and the manual keyword route in Chromium. Filters reduced three QA offers to one, the selected offer persisted across reload and sign-in, a plain product URL was rejected in the Affiliate field, and Facebook and TikTok example links saved under distinct Sub IDs. Google Trends live RSS was unavailable from the QA backend during this run. The production build passed. The Shopee portal remains the step for generating the actual Affiliate URL.
+
+## SMEG storyboard trial (2026-11-23)
+
+- Ran a four-shot storyboard for the catalog pastel-blue SMEG × 24Bottles WBF01PB 500 ml in the isolated Studio workspace. Safari opened the existing SMEG Flow project and uploaded the product reference, but stopped while confirming the attachment. Finished adding the original presenter reference in Flow, verified Image 9:16 with one output, and created one [new still](https://flow.google.com/project/834ad336-5de3-4e7f-8f43-57cdfdf2627e/edit/433153b3-280d-422e-9010-e643ccfb1538).
+- Imported the original 768 × 1376 JPEG through the Studio endpoint, verified byte-identical readback, and reopened it in Safari. The four panels are numbered 01–04. The presenter and bottle are visually consistent, with the grip partly obscuring the front lettering in panel 02. No video or publication request was submitted. UX changes were paused.
+
+## Automation and agent inventory (2026-11-23)
+
+- Reviewed the Studio backend, Safari extension, Flow operating instructions, and verification records. The Safari storyboard handoff explicitly disables Flow Agent and selects still-image mode. Agent-led Flow video generation remains an operator-approved workflow outside the Studio worker. No runtime checks or external operations were performed for this inventory.
+
+## Safari storyboard handoff and live Flow readback
+
+- Added Safari extension 0.3.0 and a Studio button that transfers the saved still-image prompt and two references to a new Flow tab, verifies Image mode, 9:16 and one output, and returns the matching image to the private Studio review screen. For live QA a temporary extension pointed to an isolated Studio instance on port 3020. The standard extension targets port 3014.
+- In real Safari, the extension attached the GHAOHES product and presenter images through Flow's Upload media control and entered the 12-shot prompt. Flow did not start from the extension's simulated click. A direct click on the verified Image Generate button started the job, and Safari automatically imported the [new Flow image](https://flow.google.com/project/81d65799-15e1-4834-b708-4e17857d09ff/edit/c4ab6795-8e57-4eb9-a513-1858f39db3ee) into Studio. The saved 768 × 1376 JPEG differs from the earlier direct Flow sample. No video or publication was requested.
+- Review flagged missing panel numbers, uneven panel boundaries and label text that differs from the source. Tightened the grid and numbering instructions after the live test. Next.js build, backend tests (22 passed, 3 skipped) and the Flow adapter simulation (3 passed) verified the code paths.
+
+## Google Flow MCP feasibility (2026-11-23)
+
+- Public documentation review found community wrappers for the Flow browser UI and no published Google MCP for Flow projects or Flow Agent. Google's Genmedia MCP uses Google Cloud media APIs. See [Flow Help](https://support.google.com/flow/), [community wrapper](https://github.com/ParkSangGwon/google-flow-mcp), and [Google Cloud Genmedia MCP](https://github.com/GoogleCloudPlatform/genmedia-creative-studio/blob/main/experiments/mcp-genmedia/README.md). No installation or live generation was performed.
+
+## Studio storyboard handoff to Google Flow
+
+- Added **เตรียม Storyboard** to ranked Shopee offers and Google Trends product opportunities. Studio saves the exact variant, verified details, up to 12 shots, and two private reference images in the workspace. It copies a still-only photorealistic prompt and opens Flow. The operator attaches references in Flow and imports the downloaded still for review in Studio.
+- In an isolated browser run, selected the saved floor-wipes offer, saved a 12-shot plan with the original product and presenter reference files, opened the actual Flow page via the clipboard action, and imported the existing 768 × 1376 still. Verified the review image persisted through reload and sign-in. No new Flow generation or publishing request was submitted.
+- The Next.js production build passed. The backend suite passed with 22 tests and 3 skips, including storyboard upload, readback, invalid image rejection and workspace isolation. Ran with a writable `PYTHAINLP_DATA` directory and `PYTHAINLP_OFFLINE=1`.
+
+## Photorealistic storyboard panels
+
+- Updated `AGENTS.md` and `CLAUDE.md` to require and review photorealistic stills in every Flow storyboard panel, including inserts and revisions, before user approval. This change updates workflow instructions.
+
+## Revised 12-panel floor-wipes storyboard
+
+- Uploaded the [revised still](https://flow.google.com/project/81d65799-15e1-4834-b708-4e17857d09ff/edit/8dc03b8d-d5f5-4f0d-b20d-9d415e34d7a6) to the existing floor-wipes collection and verified it in Flow.
+- Panels 04, 05 and 12 use crops from the actual listing photo. Panel 06 arranges five copies of the photographed pack. A pixel comparison confirmed that the other eight panels, including the presenter frames, match the original.
+- The revised still is awaiting user review. No video or audio generation was submitted.
+
+## Google Flow storyboard approval
+
+- Added a project-wide agent rule to create and review a still storyboard before submitting any Flow video-generation request. The rule covers single shots, batches, revisions, and added shots. See [AGENTS.md](../../AGENTS.md#google-flow-workflow).
+- Set vertical 9:16 framing for every storyboard panel and require verified 9:16 and Veo 3.1 Lite settings before every video-generation request, including retries.
+- The floor-wipes test produced a 12-panel storyboard with the existing presenter and package references in Flow. The label and five-pack shots need review before any video generation. This task updates operating instructions only.
+
+## SMEG Reel with a product photo in the first frame
+
+- Planned the Reel in the Gemini web app, then used one Veo 3.1 Lite generation in Flow for the notebook-and-pen insert. Replaced unsupported product benefit wording with the visible item details. No API billing was enabled.
+- Added a product-photo-first mode to the Flow MP4 import. Chromium imported the actual Flow clip, selected the new mode and played render `5e12819c-46ee-49df-9261-b67189d8d529`. Frame inspection confirmed the real bottle at 0 seconds, the Veo insert from 4–7 seconds, and real product photos for the remaining two shots. FFprobe confirmed 15 seconds at 1080 × 1920, H.264 at 30 fps. The preview has no publication record. The web build and 37 tests passed.
+
+## Google Flow opening shot and SMEG Reel
+
+- Generated one vertical 720p desk shot in Google Flow with Veo 3.1 Lite using the signed-in account. Flow's settings showed 10 credits for one output. Downloaded the 7.93-second original and imported it in Studio. No API billing was enabled.
+- Chrome verified the local Studio upload, optional Thai opening caption, and playback of the actual FFmpeg result. Render `3f075866-94d2-471a-b454-a8a9d61529e9` combines four seconds of Flow footage and two real product photos. FFprobe confirmed 15 seconds at 1080 × 1920. The preview is muted and has no Meta publication record. The web build and 37 tests passed.
+
+## Purchased-product asset collection and Reel preview
+
+- Added a workspace-scoped screen for verified purchases. Once direct image URLs are registered, one action downloads the originals into source folders and renders a private FFmpeg Reel. Purchase verification and search-result selection currently happen before registering the item.
+- Registered the SMEG × 24Bottles WBF01 from the completed Shopee purchase already verified in Safari. In Chromium, selecting it and clicking the render button downloaded one Shopee gallery image and two images found through search, and played preview `28e84246-f334-42e3-813a-eb622b85fc5d` at 1080 × 1920 for 15 seconds. The catalog photos show the pastel-blue variant. The original purchase color and publication rights are unverified.
+- The production web build and 37 backend/publish-spike tests passed. The preview requires workspace access and does not enter the publishing render library.
+- Added a single authenticated collection endpoint and per-render source manifests. Verified a second completed purchase in the existing Shopee session, COTTO CT9901#SA(HM), and selected two exact-model references through image search. The endpoint downloaded three originals and generated a 1080 × 1920, 15-second preview. Chromium verified the COTTO purchase source, asset list and playback in Studio. Continuous buyer-history and Google image discovery still need supported connectors. No publication was created.
+
+## Phase 7 opportunity-to-Reel preview (2026-11-22)
+
+- In Studio, **เตรียม Reel** passes the selected product and trend or manual query into an editable three-scene script. FFmpeg burns each caption into the preview at 0–5, 5–10 and 10–15 seconds. The saved preview remains available when the editing session ends.
+- Chromium selected the existing Scotch-Brite microfiber kitchen cloth from a controlled ranked result because the live workspace had no matching trend. It opened the video form, edited the script, uploaded three original graphics already used for this product and submitted one real FFmpeg render. Render `d593d7e9-9682-46b7-b2a6-975f01fedec5` completed and loaded in Studio.
+- FFprobe confirmed H.264/AAC, 1080 × 1920, 30 fps and 15.00 seconds. Inspected frames at 2, 7 and 12 seconds for legible Thai text. The authenticated download matched the saved file byte-for-byte. The preview has no Meta publication or simulation record.
+- The web production build and 36 backend/publish-spike tests passed. Gemini, Veo and Shopee Open API remain deferred.
+
 ## Phase 7 product opportunity ranking (2026-11-22)
 
 - The Google Trends page ranks up to five distinct products using estimated search volume (25 points), keyword relevance (35), attributed clicks (15) and eligible unique orders (25). CSV history covers 30 Bangkok calendar days. The page shows each component and distinguishes missing data from an observed zero.

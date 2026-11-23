@@ -21,6 +21,7 @@ from .auth import WorkspaceContext, require_workspace
 from .db import get_db
 from .products import Product
 from .shopee_report_csv import BANGKOK
+from .shopee_offers import ShopeeOffer
 
 FEED_URL = "https://trends.google.com/trending/rss?geo=TH"
 SOURCE_URL = "https://trends.google.com/trending?geo=TH"
@@ -202,13 +203,23 @@ def explore_url(title: str) -> str:
 
 
 @router.get("")
-def list_trends(context: Context, db: Database, hours: Literal["4", "24"] = "24"):
+def list_trends(
+    context: Context, db: Database, hours: Literal["4", "24"] = "24",
+    include_offers: bool = False,
+):
     now = datetime.now(timezone.utc)
     try:
         snapshot, stale = cache.get(now)
     except FeedError as exc:
         raise HTTPException(503, str(exc)) from None
     products = catalog(db, context.workspace_id)
+    offers = []
+    if include_offers:
+        rows = db.execute(
+            select(ShopeeOffer.offer_id, ShopeeOffer.name)
+            .where(ShopeeOffer.workspace_id == str(context.workspace_id))
+        )
+        offers = [(row.offer_id, row.name, tokens(row.name)) for row in rows]
     entries = []
     for trend in snapshot.entries:
         if trend.published_at and trend.published_at < now - timedelta(hours=int(hours)):
@@ -219,6 +230,13 @@ def list_trends(context: Context, db: Database, hours: Literal["4", "24"] = "24"
             "title": trend.title, "published_at": trend.published_at, "traffic": trend.traffic,
             "explore_url": explore_url(trend.title), "matches": match(trend.title, products),
         })
+        if include_offers:
+            entries[-1]["offer_matches"] = [
+                {"offer_id": item["product_id"], "score": opportunity(
+                    item, traffic_count(trend.traffic), None, None,
+                )["total"]}
+                for item in match(trend.title, offers)[:5]
+            ]
     end = now.astimezone(BANGKOK).date()
     start = end - timedelta(days=HISTORY_DAYS - 1)
     candidates = {item["product_id"] for entry in entries for item in entry["matches"]}

@@ -175,7 +175,18 @@ def test_csv_channel_link_and_workspace_isolation(client):
         {"channel": "instagram", **instagram, "sub_id": "ig02"},
     ]
 
+    fallback = "https://affiliate.example/default"
+    assert client.patch(f"{path}/{product['id']}", json={"affiliate_url": fallback}).status_code == 200
+    index = path + "/affiliate-links"
+    shared = {"product_id": product["id"], "product_name": "Wipes"}
+    assert client.get(index).raise_for_status().json() == [
+        {**shared, "channel": "facebook", "sub_id": "fb01", "affiliate_url": "https://affiliate.example/facebook"},
+        {**shared, "channel": "instagram", "sub_id": "ig02", "affiliate_url": instagram["affiliate_url"]},
+        {**shared, "channel": None, "sub_id": None, "affiliate_url": fallback},
+    ]
+
     client.app.dependency_overrides[require_workspace] = lambda: Context("workspace-b")
     other = links.replace("workspace-a", "workspace-b")
     assert client.get(other).status_code == 404
     assert client.put(other + "/facebook", json=instagram).status_code == 404
+    assert client.get(index.replace("workspace-a", "workspace-b")).raise_for_status().json() == []

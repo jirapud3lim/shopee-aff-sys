@@ -2,10 +2,11 @@
 
 from datetime import UTC, datetime
 from typing import Annotated, Any
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, select
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, func, select
 from sqlalchemy.dialects.postgresql import insert as postgres_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Mapped, Session, mapped_column
@@ -29,6 +30,7 @@ class ShopeeOffer(Base):
     sold_is_minimum: Mapped[bool]
     price_satang: Mapped[int] = mapped_column(BigInteger)
     commission_bps: Mapped[int] = mapped_column(Integer)
+    image_url: Mapped[str | None] = mapped_column(String(2083))
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
@@ -41,6 +43,17 @@ class OfferInput(BaseModel):
     sold_is_minimum: bool
     price_satang: int = Field(gt=0, le=9_999_999_999, strict=True)
     commission_bps: int = Field(ge=0, le=10_000, strict=True)
+    image_url: str | None = Field(default=None, max_length=2083)
+
+    @field_validator("image_url")
+    @classmethod
+    def validate_image(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        url = urlsplit(value)
+        if url.scheme != "https" or url.netloc not in {"down-th.img.susercontent.com", "cf.shopee.co.th"}:
+            raise ValueError("Use a Shopee product image URL")
+        return value
 
 
 class OfferSnapshot(OfferInput):
@@ -87,7 +100,11 @@ def capture_offers(
     statement = insert(ShopeeOffer).values(rows)
     db.execute(statement.on_conflict_do_update(
         index_elements=[ShopeeOffer.workspace_id, ShopeeOffer.offer_id],
-        set_={key: statement.excluded[key] for key in rows[0] if key not in ("workspace_id", "offer_id")},
+        set_={
+            key: statement.excluded[key] if key != "image_url" else
+            func.coalesce(statement.excluded.image_url, ShopeeOffer.image_url)
+            for key in rows[0] if key not in ("workspace_id", "offer_id")
+        },
         where=ShopeeOffer.observed_at <= statement.excluded.observed_at,
     ))
     db.commit()

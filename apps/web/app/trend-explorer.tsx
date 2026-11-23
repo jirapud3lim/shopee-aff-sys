@@ -24,6 +24,9 @@ type Props = {
   active: boolean;
   busy: boolean;
   onProduct: (id: string) => void;
+  onChooseTrend: (query: string) => void;
+  onStoryboard: (id: string, name: string) => void;
+  onPrepare: (id: string, query: string, source: "trend" | "lookup") => void;
 };
 
 const bangkok = new Intl.DateTimeFormat("th-TH", {
@@ -45,8 +48,9 @@ function rankedProducts(trends: Trend[]) {
   return [...best.values()].sort((a, b) => b.item.opportunity.total - a.item.opportunity.total).slice(0, 5);
 }
 
-function ProductRanking({ trends, scoring, busy, open }: {
-  trends: Trend[]; scoring: Scoring; busy: boolean; open: (id: string) => void;
+function ProductRanking({ trends, scoring, busy, open, prepare, storyboard }: {
+  trends: Trend[]; scoring: Scoring; busy: boolean; open: (id: string) => void; prepare: Props["onPrepare"];
+  storyboard: Props["onStoryboard"];
 }) {
   const ranked = rankedProducts(trends);
   const { weights, start, end } = scoring;
@@ -75,23 +79,30 @@ function ProductRanking({ trends, scoring, busy, open }: {
             <div><dt>คำสั่งซื้อ {points.orders}/{weights.orders}</dt>
               <dd>{orders === null ? "ไม่มีคำสั่งซื้อที่เชื่อมได้" : `${count.format(orders)} คำสั่งซื้อที่นับได้`}</dd></div>
           </dl>
+          <button type="button" className="secondary" disabled={busy}
+            onClick={() => prepare(item.product_id, trend.title, "trend")}>เตรียม Reel</button>
+          <button type="button" className="secondary" disabled={busy}
+            onClick={() => storyboard(item.product_id, item.name)}>เตรียม Storyboard</button>
         </li>;
       })}
     </ol> : <p className="muted">ยังไม่มีสินค้าที่ตรงกับเทรนด์ในตัวกรองนี้สำหรับจัดอันดับ</p>}
   </section>;
 }
 
-function Matches({ matches, busy, open }: { matches: Match[]; busy: boolean; open: (id: string) => void }) {
+function Matches({ matches, busy, open, prepare }: {
+  matches: Match[]; busy: boolean; open: (id: string) => void; prepare: (id: string) => void;
+}) {
   if (!matches.length) return <p className="muted">ยังไม่พบสินค้าที่ตรงในคลัง</p>;
   return <ul className="trend-matches">
     {matches.map((item) => <li key={item.product_id}>
       <button type="button" className="text-button" disabled={busy} onClick={() => open(item.product_id)}>{item.name}</button>
       <p className="muted">{item.phrase ? "ตรงทั้งวลี" : "คำที่ตรง"} · {item.terms.join(" · ")}</p>
+      <button type="button" className="secondary" disabled={busy} onClick={() => prepare(item.product_id)}>เตรียม Reel</button>
     </li>)}
   </ul>;
 }
 
-export default function TrendExplorer({ request, scope, token, active, busy, onProduct }: Props) {
+export default function TrendExplorer({ request, scope, token, active, busy, onProduct, onPrepare, onStoryboard, onChooseTrend }: Props) {
   const [feed, setFeed] = useState<Feed | null>(null);
   const [hours, setHours] = useState("24");
   const [filter, setFilter] = useState("");
@@ -143,7 +154,7 @@ export default function TrendExplorer({ request, scope, token, active, busy, onP
   return <div id="trends" className="trend-explorer">
     <header>
       <h1 tabIndex={-1}>เทรนด์ค้นหาในไทย</h1>
-      <p className="muted">จับคู่คำค้น Google Trends กับชื่อสินค้า Shopee ในคลังของพื้นที่ทำงานนี้</p>
+      <p className="muted">เลือกกระแสที่สนใจ แล้วคัดสินค้าจากยอดขายและค่าคอมในขั้นถัดไป</p>
     </header>
 
     <section className="panel" aria-labelledby="trend-feed-title">
@@ -170,7 +181,6 @@ export default function TrendExplorer({ request, scope, token, active, busy, onP
       <p className="muted">จำนวนค้นหาเป็นค่าประมาณจาก Google สำหรับเทรนด์ในฟีด</p>
       {loading && <p role="status">กำลังโหลด Google Trends…</p>}
       {feedError && <p role="alert" className="notice error">{feedError}</p>}
-      {feed && !loading && <ProductRanking trends={trends} scoring={feed.scoring} busy={busy} open={onProduct} />}
       {feed && !loading && (trends.length ? <ul className="trend-list">
         {trends.map((trend) => <li key={trend.title} className="trend-row">
           <div>
@@ -179,10 +189,26 @@ export default function TrendExplorer({ request, scope, token, active, busy, onP
               {trend.published_at ? bangkok.format(Date.parse(trend.published_at)) : "ไม่ระบุเวลา"}</p>
             <a href={trend.explore_url} target="_blank" rel="noreferrer">ดูความสนใจใน Google Trends</a>
           </div>
-          <Matches matches={trend.matches} busy={busy} open={onProduct} />
+          <div className="trend-choice">
+            <button type="button" className="primary" disabled={busy}
+              aria-label={`เลือกเทรนด์ ${trend.title}`} onClick={() => onChooseTrend(trend.title)}>
+              เลือกเทรนด์นี้
+            </button>
+            {!!trend.matches.length && <details>
+              <summary>สินค้าในคลังที่ตรง ({trend.matches.length})</summary>
+              <Matches matches={trend.matches} busy={busy} open={onProduct}
+                prepare={(id) => onPrepare(id, trend.title, "trend")} />
+            </details>}
+          </div>
         </li>)}
       </ul> : <p className="muted">ไม่มีเทรนด์ตรงกับตัวกรองในฟีด</p>)}
     </section>
+
+    {feed && !loading && <details className="panel workflow-details">
+      <summary>อันดับโอกาสของสินค้าที่มีในคลัง</summary>
+      <ProductRanking trends={trends} scoring={feed.scoring} busy={busy} open={onProduct}
+        prepare={onPrepare} storyboard={onStoryboard} />
+    </details>}
 
     <section className="panel" aria-labelledby="trend-lookup-title">
       <h2 id="trend-lookup-title">จับคู่คำค้นเอง</h2>
@@ -193,8 +219,12 @@ export default function TrendExplorer({ request, scope, token, active, busy, onP
       {matchError && <p role="alert" className="notice error">{matchError}</p>}
       {lookup && <div className="result" aria-live="polite">
         <h3>{lookup.query}</h3>
+        <button type="button" className="primary" disabled={busy} onClick={() => onChooseTrend(lookup.query)}>
+          ใช้คำค้นนี้คัดสินค้า Shopee
+        </button>
         <p className="muted">พบ {lookup.matches.length} รายการ · คลังสินค้า Shopee {lookup.catalog_count} รายการ</p>
-        <Matches matches={lookup.matches} busy={busy} open={onProduct} />
+        <Matches matches={lookup.matches} busy={busy} open={onProduct}
+          prepare={(id) => onPrepare(id, lookup.query, "lookup")} />
         <a href={lookup.explore_url} target="_blank" rel="noreferrer">ตรวจความสนใจของคำนี้ใน Google Trends</a>
       </div>}
     </section>
