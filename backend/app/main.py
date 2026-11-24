@@ -16,6 +16,7 @@ from app.products import router as products_router
 from app.publishing import router as publishing_router
 from app.purchase_previews import router as purchase_previews_router
 from app.renders import router as renders_router
+from app.shopee_links import router as shopee_links_router
 from app.shopee_offers import router as shopee_offers_router
 from app.storyboards import router as storyboards_router
 
@@ -30,7 +31,7 @@ app = FastAPI(
 for feature_router in (
     products_router, renders_router, publishing_router, meta_publishing_router,
     affiliate_reports_router, campaigns_router, operations_router, google_trends_router,
-    purchase_previews_router, shopee_offers_router, storyboards_router,
+    purchase_previews_router, shopee_offers_router, storyboards_router, shopee_links_router,
 ):
     app.include_router(feature_router)
 

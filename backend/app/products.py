@@ -22,7 +22,7 @@ from pydantic import (
     ValidationError,
     field_validator,
 )
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint, null, select
+from sqlalchemy import ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint, null, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
@@ -67,6 +67,8 @@ class ChannelLink(Base):
     channel: Mapped[str] = mapped_column(String(48), primary_key=True)
     affiliate_url: Mapped[str] = mapped_column(Text)
     sub_id: Mapped[str | None] = mapped_column(String(100))
+    shopee_verification: Mapped[str | None] = mapped_column(String(16))
+    shopee_verified_by: Mapped[str | None] = mapped_column(String(36))
 
 
 Channel = Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9_-]{0,47}$")]
@@ -87,6 +89,10 @@ class ChannelLinkInput(BaseModel):
 class ChannelLinkOut(ChannelLinkInput):
     model_config = ConfigDict(from_attributes=True)
     channel: Channel
+
+
+class ChannelLinkReview(ChannelLinkOut):
+    shopee_verification: str | None = None
 
 
 class WorkspaceAffiliateLink(BaseModel):
@@ -270,7 +276,7 @@ def update_product(
     product = db.scalar(
         select(Product).where(
             Product.id == product_id, Product.workspace_id == _workspace_id(context)
-        )
+        ).with_for_update()
     )
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -280,6 +286,10 @@ def update_product(
             raise HTTPException(status_code=422, detail=f"{required_field} cannot be null")
     if "source_url" in updates:
         updates["source_url"] = _source_url(updates["source_url"])
+        if updates["source_url"] != product.source_url:
+            db.execute(update(ChannelLink).where(
+                ChannelLink.workspace_id == product.workspace_id, ChannelLink.product_id == product.id,
+            ).values(shopee_verification=None, shopee_verified_by=None))
     if "affiliate_url" in updates and updates["affiliate_url"] is not None:
         updates["affiliate_url"] = str(updates["affiliate_url"])
     for key, value in updates.items():
@@ -317,6 +327,10 @@ def save_channel_link(
     context: Any = Depends(require_workspace),
     db: Session = Depends(get_db),
 ):
+    return persist_channel_link(product_id, channel, body, context, db)
+
+
+def persist_channel_link(product_id, channel, body, context, db, *, shopee_verification=None):
     workspace = _workspace_id(context)
     if not db.scalar(
         select(Product.id).where(Product.id == product_id, Product.workspace_id == workspace)
@@ -327,6 +341,11 @@ def save_channel_link(
     if link is None:
         link = ChannelLink(workspace_id=workspace, product_id=product_id, channel=channel)
         db.add(link)
+    if (link.affiliate_url, link.sub_id) != (str(body.affiliate_url), body.sub_id):
+        link.shopee_verification = None
+        link.shopee_verified_by = None
+    if shopee_verification is not None and not link.shopee_verified_by:
+        link.shopee_verification = shopee_verification
     link.affiliate_url = str(body.affiliate_url)
     link.sub_id = body.sub_id
     try:

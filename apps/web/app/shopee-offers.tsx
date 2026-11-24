@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { safariCaptureEnabled } from "./safari-capture";
 
 const portal = "https://affiliate.shopee.co.th/offer/product_offer";
 const numbers = new Intl.NumberFormat("th-TH");
@@ -89,7 +90,7 @@ export default function ShopeeOffers({ active, scope, token, request, onStoryboa
   }, [active, path, request, token]);
 
   useEffect(() => {
-    if (window.isSecureContext) setRequestId(crypto.randomUUID());
+    if (safariCaptureEnabled && window.isSecureContext) setRequestId(crypto.randomUUID());
     return () => window.clearTimeout(captureTimeout.current);
   }, []);
 
@@ -221,10 +222,12 @@ export default function ShopeeOffers({ active, scope, token, request, onStoryboa
         <h2>ข้อเสนอจาก Shopee Affiliate</h2>
         <a href={portal} target="_blank" rel="noreferrer">เปิดข้อเสนอผลิตภัณฑ์</a>
       </div>
-      <p className="muted">ค้นสินค้าใน Shopee Affiliate แล้วนำผลที่แสดงใน Safari เข้ามาจัดอันดับ</p>
-      <button id="safari-offer-capture" data-request-id={requestId} type="button" className="secondary"
-        disabled={busy || !requestId} onClick={startCapture}>ดึงข้อเสนอจาก Safari</button>
-      <details>
+      {safariCaptureEnabled && <>
+        <p className="muted">ค้นสินค้าใน Shopee Affiliate แล้วนำผลที่แสดงใน Safari เข้ามาจัดอันดับ</p>
+        <button id="safari-offer-capture" data-request-id={requestId} type="button" className="secondary"
+          disabled={busy || !requestId} onClick={startCapture}>ดึงข้อเสนอจาก Safari</button>
+      </>}
+      <details open={safariCaptureEnabled ? undefined : true}>
         <summary>เพิ่มข้อเสนอจาก Shopee ทีละรายการ</summary>
         <form className="offer-entry" onSubmit={saveManually}>
           <label>ลิงก์หน้าข้อเสนอ<input name="offer_url" type="url" required maxLength={2083} /></label>

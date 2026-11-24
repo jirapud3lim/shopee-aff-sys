@@ -10,6 +10,6 @@
 - **Acceptance:** Studio published the Scotch-Brite Reel and verified its Affiliate comment via the live Meta API. See the session handoff for the result.
 - **Phase 5 acceptance:** The durable queue completed 500 simulations. The Studio UI verified draft, activate, pause, resume and completion. Multi-Page and production worker deployment remain pending.
 - **Phase 6 acceptance:** Staging rejected live writes, processed one simulated publication, restored one PostgreSQL workspace and MP4 from backup, and scraped worker and backup metrics. Hosted deployment, off-host backup scheduling, and external alert routing remain pending. See `../ops/STAGING.md`.
-- **Phase 7 verification:** The live Thailand feed and manual matching passed through the Studio proxy. Gemini, Veo and Shopee Open API remain paused.
+- **Phase 7 verification:** The live Thailand feed and manual matching passed through the Studio proxy. PRD-03 has Open API and non-API partner link modes scoped to the configured workspace. Both await live account and attribution checks. Gemini, Veo and other Shopee Open API operations remain deferred.
 
 Edit this file when the active phase changes; keep it <30 lines.

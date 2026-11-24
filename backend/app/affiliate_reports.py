@@ -46,7 +46,8 @@ class AffiliateReportRow(Base):
 
 
 def save_report(db: Session, workspace_id: str, kind: ReportType, records: dict) -> int:
-    insert = postgres_insert if db.get_bind().dialect.name == "postgresql" else sqlite_insert
+    postgres = db.get_bind().dialect.name == "postgresql"
+    insert = postgres_insert if postgres else sqlite_insert
     timestamp = datetime.now(timezone.utc).isoformat()
     if not records:
         return 0
@@ -79,8 +80,11 @@ def save_report(db: Session, workspace_id: str, kind: ReportType, records: dict)
                             for key, value in changes.items()))
                 ),
             )
-        result = db.execute(stmt)
-        written += result.rowcount
+        if postgres:
+            # psycopg can report an unknown rowcount for INSERT with ON CONFLICT.
+            written += len(db.execute(stmt.returning(AffiliateReportRow.row_key)).all())
+        else:
+            written += db.execute(stmt).rowcount
     db.commit()
     return written
 

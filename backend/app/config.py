@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     meta_studio_example_reel_id: str = ""
     meta_studio_publish_enabled: bool = False
     campaign_live_enabled: bool = False
+    shopee_affiliate_app_id: str = ""
+    shopee_affiliate_secret: SecretStr = SecretStr("")
+    shopee_affiliate_workspace_id: str = ""
+    shopee_affiliate_partner_id: str = ""
 
 
 @lru_cache

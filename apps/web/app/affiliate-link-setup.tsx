@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { channelLabels } from "./affiliate-links";
+import { safariCaptureEnabled } from "./safari-capture";
 
 export type Selection = { kind: "offer" | "catalog"; id: string; name: string };
 export type AffiliateJourney = { trend: string; offer: Selection | null };
 export const emptyJourney: AffiliateJourney = { trend: "", offer: null };
 export type CatalogProduct = { id: string; name: string; source_url: string; affiliate_url: string | null; image_rights_note: string | null };
-export type AffiliateLink = { channel: string; affiliate_url: string; sub_id: string | null };
-type SavedLink = { link: AffiliateLink; item: CatalogProduct };
+export type AffiliateLink = { channel: string; affiliate_url: string; sub_id: string | null; shopee_verification?: string | null };
+type SavedLink = { link: AffiliateLink; item: CatalogProduct; legacy?: boolean };
 type SafariResult = { source?: string; affiliate_url?: string; tabId?: number; error?: string };
 
 const shopeeLinkTool = "https://affiliate.shopee.co.th/offer/custom_link";
@@ -97,6 +98,7 @@ export default function AffiliateLinkSetup({ trend, offer, scope, token, product
   } | null>(null);
   const [status, setStatus] = useState({ text: "", error: false });
   const [bridgeReady, setBridgeReady] = useState(false);
+  const [generationMode, setGenerationMode] = useState<"api" | "partner" | false>();
   const portalTimeout = useRef<number | undefined>(undefined);
   const portalId = useRef("");
   const dispatchedPortal = useRef("");
@@ -117,12 +119,12 @@ export default function AffiliateLinkSetup({ trend, offer, scope, token, product
         await request<CatalogProduct[]>(path, token, { signal: controller.signal }), offer,
       );
       if (!item || controller.signal.aborted) return;
-      const links = await request<AffiliateLink[]>(`${path}/${item.id}/channel-links`, token, { signal: controller.signal });
+      const links = await request<AffiliateLink[]>(`${scope}/shopee-links/${item.id}`, token, { signal: controller.signal });
       if (controller.signal.aborted) return;
       const channelLink = links.find((entry) => entry.channel === channel && isAffiliateLink(entry.affiliate_url));
       if (channelLink) setSaved({ link: channelLink, item });
       else if (channel === "facebook" && isAffiliateLink(item.affiliate_url)) {
-        setSaved({ link: { channel, affiliate_url: item.affiliate_url, sub_id: null }, item });
+        setSaved({ link: { channel, affiliate_url: item.affiliate_url, sub_id: null }, item, legacy: true });
       }
     }
     lookup().catch(() => {
@@ -131,9 +133,20 @@ export default function AffiliateLinkSetup({ trend, offer, scope, token, product
       if (!controller.signal.aborted) setChecking(false);
     });
     return () => controller.abort();
-  }, [channel, existingProduct, lookupRetry, offer, path, request, token]);
+  }, [channel, existingProduct, lookupRetry, offer, path, request, scope, token]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    request<{ generate_enabled: boolean; mode?: "partner" }>(
+      scope + "/shopee-links", token, { signal: controller.signal },
+    ).then((result) => {
+      if (!controller.signal.aborted) setGenerationMode(result.generate_enabled ? result.mode ?? "api" : false);
+    }).catch(() => { if (!controller.signal.aborted) setGenerationMode(false); });
+    return () => controller.abort();
+  }, [request, scope, token]);
+
+  useEffect(() => {
+    if (!safariCaptureEnabled) return;
     const ready = () => setBridgeReady(true);
     window.addEventListener("studio:affiliate-ready", ready);
     window.dispatchEvent(new Event("studio:affiliate-probe"));
@@ -149,16 +162,12 @@ export default function AffiliateLinkSetup({ trend, offer, scope, token, product
     }
   }
 
-  async function saveLink(origin: string, url: string, tag: string) {
+  async function ensureProduct(origin: string) {
     const canonical = listingUrl(origin);
     const knownListing = listingUrl(existingProduct?.source_url);
     if (!canonical || (offer.kind === "offer" && listingItemId(canonical) !== offer.id) ||
         (knownListing && canonical !== knownListing) || (offer.kind === "catalog" && !knownListing)) {
       throw new Error("URL หน้าสินค้า Shopee ต้องตรงกับสินค้าที่เลือก");
-    }
-    const linkedListing = listingUrl(url);
-    if (!isAffiliateLink(url) || (linkedListing && linkedListing !== canonical)) {
-      throw new Error("ใช้ลิงก์ Affiliate ที่ Shopee สร้างให้สำหรับรายการสินค้านี้");
     }
     const oneProduct = (items: CatalogProduct[]) => items.find((item) => listingUrl(item.source_url) === canonical);
     let item = existingProduct && listingUrl(existingProduct.source_url) === canonical ? existingProduct
@@ -173,22 +182,49 @@ export default function AffiliateLinkSetup({ trend, offer, scope, token, product
         if (!item) throw error;
       }
     }
-    const result = await request<AffiliateLink>(`${path}/${item.id}/channel-links/${channel}`, token, {
-      method: "PUT", body: JSON.stringify({ affiliate_url: url, sub_id: tag.trim() || null }),
-    });
-    setNewLink(result);
-    setSaved({ link: result, item });
-    onSave(item);
+    return item;
   }
 
-  async function persist(origin: string, url: string, tag: string) {
+  async function persist(origin: string, url: string | null, tag: string) {
     setWorking(true);
     onBusy(true);
     try {
-      await saveLink(origin, url, tag);
+      const linkedListing = listingUrl(url ?? undefined);
+      if (url !== null && (!isAffiliateLink(url) || (linkedListing && linkedListing !== listingUrl(origin)))) {
+        throw new Error("ใช้ลิงก์ Affiliate ที่ Shopee สร้างให้สำหรับรายการสินค้านี้");
+      }
+      const item = await ensureProduct(origin);
+      const result = await request<AffiliateLink>(`${scope}/shopee-links/${item.id}/${channel}`, token, {
+        method: url === null ? "POST" : "PUT",
+        body: JSON.stringify({ ...(url !== null && { affiliate_url: url }), sub_id: tag.trim() || null }),
+      });
+      setNewLink(result);
+      setSaved({ link: result, item });
+      onSave(item);
       setStatus({ text: "", error: false });
     } catch (error) {
       setStatus({ text: error instanceof Error ? error.message : "บันทึกลิงก์ไม่สำเร็จ", error: true });
+    } finally {
+      onBusy(false);
+      setWorking(false);
+    }
+  }
+
+  async function continueWithLink(selection: SavedLink) {
+    setWorking(true);
+    onBusy(true);
+    try {
+      const { item, link } = selection;
+      const reviewed = selection.legacy ? link : await request<AffiliateLink>(
+        `${scope}/shopee-links/${item.id}/${link.channel}/review`, token, {
+          method: "POST", body: JSON.stringify({ affiliate_url: link.affiliate_url, sub_id: link.sub_id }),
+        },
+      );
+      setSaved({ ...selection, link: reviewed });
+      onContinue(item, reviewed);
+    } catch (error) {
+      setVerifiedUrl("");
+      setStatus({ text: error instanceof Error ? error.message : "ตรวจลิงก์ไม่สำเร็จ", error: true });
     } finally {
       onBusy(false);
       setWorking(false);
@@ -264,7 +300,7 @@ export default function AffiliateLinkSetup({ trend, offer, scope, token, product
     newLink.affiliate_url === selectedLink.link.affiliate_url;
 
   useEffect(() => {
-    if (!autoStart || autoStarted.current || checking || lookupError || !bridgeReady || pending ||
+    if (generationMode !== false || !autoStart || autoStarted.current || checking || lookupError || !bridgeReady || pending ||
         selectedLink || (offer.kind !== "offer" && !listing)) return;
     autoStarted.current = true;
     startPortal();
@@ -305,13 +341,15 @@ export default function AffiliateLinkSetup({ trend, offer, scope, token, product
           <strong>ลิงก์ Affiliate จาก Shopee</strong>
           <a className="affiliate-link-url" href={selectedLink.link.affiliate_url} target="_blank" rel="noreferrer">{selectedLink.link.affiliate_url}</a>
         </div>
+        {selectedLink.link.shopee_verification === "pending" &&
+          <p className="muted">รอตรวจปลายทางใน Shopee เปิดลิงก์แล้วเทียบรายการสินค้า รุ่น และช่องทางก่อนยืนยัน</p>}
         <label className="checkbox"><input type="checkbox" checked={verifiedUrl === reviewKey}
           onChange={(event) => setVerifiedUrl(event.target.checked ? reviewKey : "")} />
           ตรวจแล้วว่าลิงก์เปิดรายการ Shopee เดียวกันและตรงกับช่องทางนี้
         </label>
         <div className="affiliate-setup-actions">
-          <button type="button" className="primary" disabled={verifiedUrl !== reviewKey}
-            onClick={() => onContinue(selectedLink.item, selectedLink.link)}>เตรียม Storyboard</button>
+          <button type="button" className="primary" disabled={pending || verifiedUrl !== reviewKey}
+            onClick={() => void continueWithLink(selectedLink)}>เตรียม Storyboard</button>
           <button type="button" className="secondary"
             onClick={() => void copy(selectedLink.link.affiliate_url, "คัดลอกลิงก์แล้ว")}>คัดลอกลิงก์</button>
         </div>
@@ -321,8 +359,8 @@ export default function AffiliateLinkSetup({ trend, offer, scope, token, product
           <strong>URL หน้าสินค้า Shopee</strong>
           <a className="affiliate-link-url" href={listing} target="_blank" rel="noreferrer">{listing}</a>
         </div>}
-        {!bridgeReady && inDialog && <p className="muted">การเปิดฟอร์ม Shopee และรับลิงก์อัตโนมัติต้องใช้ Affiliate Studio Capture ใน Safari</p>}
-        {bridgeReady && (offer.kind === "offer" || listing) && <div className="affiliate-setup-actions">
+        {safariCaptureEnabled && !generationMode && !bridgeReady && inDialog && <p className="muted">การเปิดฟอร์ม Shopee และรับลิงก์อัตโนมัติต้องใช้ Affiliate Studio Capture ใน Safari</p>}
+        {safariCaptureEnabled && !generationMode && bridgeReady && (offer.kind === "offer" || listing) && <div className="affiliate-setup-actions">
           <button type="button" className="primary" disabled={pending} onClick={startPortal}>สร้างใน Shopee</button>
           {portalJob && <>
             <p role="status">{portalJob.tabId === undefined ? "กำลังเปิด Shopee และเตรียม URL สินค้า…" :
@@ -334,8 +372,8 @@ export default function AffiliateLinkSetup({ trend, offer, scope, token, product
             }}>ยกเลิกการรอ</button>
           </>}
         </div>}
-        <details className="workflow-details" open={!inDialog && !bridgeReady ? true : undefined}>
-          <summary>สร้างหรือบันทึกลิงก์ด้วยตนเอง</summary>
+        <details className="workflow-details" open={generationMode || !safariCaptureEnabled || (!inDialog && !bridgeReady) ? true : undefined}>
+          <summary>{generationMode ? "สร้างลิงก์อัตโนมัติหรือบันทึกด้วยตนเอง" : "สร้างหรือบันทึกลิงก์ด้วยตนเอง"}</summary>
           <form onSubmit={(event: FormEvent<HTMLFormElement>) => {
             event.preventDefault();
             if (!pending) void persist(source, link.trim(), subId);
@@ -347,6 +385,15 @@ export default function AffiliateLinkSetup({ trend, offer, scope, token, product
                 onChange={(event) => setSource(event.target.value)} /></label>
               <label>Sub ID<input required pattern="[A-Za-z0-9]+" maxLength={100} value={subId}
                 onChange={(event) => setSubId(event.target.value)} /></label>
+              {generationMode && <button type="button" className="primary" disabled={!listing || !/^[A-Za-z0-9]{1,100}$/.test(subId)}
+                onClick={() => void persist(source, null, subId)}>
+                {generationMode === "partner" ? "สร้างลิงก์พาร์ทเนอร์ Shopee" : "สร้างลิงก์อัตโนมัติผ่าน Shopee"}
+              </button>}
+              <div className="affiliate-setup-actions">
+                <button type="button" className="secondary" disabled={!listing}
+                  onClick={() => void copy(listing ?? "", "คัดลอก URL สินค้าแล้ว")}>คัดลอก URL สินค้า</button>
+                <button type="button" className="secondary" onClick={() => void copy(subId, "คัดลอก Sub ID แล้ว")}>คัดลอก Sub ID</button>
+              </div>
               <a href={shopeeLinkTool} target="_blank" rel="noreferrer">เปิดเครื่องมือสร้างลิงก์ Shopee</a>
               <label>ลิงก์ Affiliate จาก Shopee<input type="url" required maxLength={2083} value={link}
                 onChange={(event) => setLink(event.target.value)} placeholder="https://s.shopee.co.th/…" /></label>

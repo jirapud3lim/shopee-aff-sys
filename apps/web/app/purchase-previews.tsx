@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import type { StudioRequest } from "./meta-publishing";
+import { safariCaptureEnabled } from "./safari-capture";
 
 type Asset = { source: "shopee" | "google"; file: string; url: string };
 type Preview = {
@@ -29,6 +30,7 @@ export default function PurchasePreviews({ active, scope, token, request }: Prop
   const base = scope + "/purchase-previews";
 
   useEffect(() => {
+    if (!safariCaptureEnabled) return;
     if (!active || window.location.origin !== "http://127.0.0.1:3014") {
       setSafariReady(false);
       setCaptureId("");
@@ -187,12 +189,14 @@ export default function PurchasePreviews({ active, scope, token, request }: Prop
     <div className="panel">
       <div className="columns">
         <div className="column">
-          <button id="safari-purchase-capture" data-request-id={captureId} type="button" className="primary"
-            disabled={!safariReady || !captureId || loading || !!pending}>
-            {pending === "safari" ? "Safari กำลังตรวจประวัติซื้อและค้นภาพ…" :
-              pending === "capture-render" ? "Studio กำลังเก็บภาพและเรนเดอร์…" : "ดึงจาก Safari และสร้างตัวอย่าง"}
-          </button>
-          {!safariReady && <p className="muted">เปิดหน้า Studio ใน Safari และเปิดใช้ส่วนขยาย Affiliate Studio Purchase Capture</p>}
+          {safariCaptureEnabled && <>
+            <button id="safari-purchase-capture" data-request-id={captureId} type="button" className="primary"
+              disabled={!safariReady || !captureId || loading || !!pending}>
+              {pending === "safari" ? "Safari กำลังตรวจประวัติซื้อและค้นภาพ…" :
+                pending === "capture-render" ? "Studio กำลังเก็บภาพและเรนเดอร์…" : "ดึงจาก Safari และสร้างตัวอย่าง"}
+            </button>
+            {!safariReady && <p className="muted">เปิดหน้า Studio ใน Safari และเปิดใช้ส่วนขยาย Affiliate Studio Purchase Capture</p>}
+          </>}
           <label>สินค้าที่ซื้อสำเร็จ<select disabled={loading || !!pending} value={selectedId}
             onChange={(event) => setSelectedId(event.target.value)}>
             <option value="">เลือกสินค้า</option>

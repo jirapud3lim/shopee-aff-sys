@@ -61,4 +61,5 @@
 
 - This slice uses the official Trending Now RSS for Thailand. The feed does not include categories. Matches use shared words in the local Shopee catalog and expose the matching terms.
 - See [ADR-0006](../decisions/ADR-0006-thai-trend-discovery.md) for the feed and matching decisions.
-- Gemini, Veo, and Shopee Open API are deferred. See the session handoff for verification of the Google Trends slice.
+- Gemini, Veo, and Shopee Open API operations beyond PRD-03 short-link generation are deferred. PRD-03 awaits live verification with either approved Thai Open API credentials or an eligible partner Affiliate ID and matching click attribution.
+- Production excludes Codex Computer Use. The [production backlog](../backlog/PRODUCTION_NO_COMPUTER_USE.md) tracks operator handoffs and provider verification.

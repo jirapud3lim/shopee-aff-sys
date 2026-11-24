@@ -8,9 +8,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.auth import require_workspace
+from app.config import Settings, get_settings
 from app.db import Base, get_db
 from app.main import app
 from app.models import SessionToken, User
+from app import shopee_links
 
 
 @pytest.fixture()
@@ -50,6 +52,89 @@ def register(client: TestClient, email: str = "person@example.com") -> str:
     )
     assert response.status_code == 201
     return response.json()["token"]
+
+
+def test_shopee_automatic_link_is_scoped_reused_and_reviewed(client, monkeypatch):
+    def workspace(email):
+        auth = {"Authorization": f"Bearer {register(client, email)}"}
+        ws, = client.get("/api/v1/workspaces", headers=auth).json()
+        return auth, "/api/v1/workspaces/" + ws["id"]
+
+    headers, scope = workspace("affiliate@example.com")
+    other_headers, other_scope = workspace("other-affiliate@example.com")
+    path = scope + "/shopee-links"
+    assert client.get(path, headers=headers).json() == {"generate_enabled": False}
+    client.app.dependency_overrides[get_settings] = lambda: Settings(
+        shopee_affiliate_app_id="123", shopee_affiliate_secret="fixture-secret",
+        shopee_affiliate_workspace_id=scope.rsplit("/", 1)[-1],
+    )
+    assert client.get(path, headers=headers).json() == {"generate_enabled": True}
+    assert client.get(other_scope + "/shopee-links", headers=other_headers).json() == {"generate_enabled": False}
+    product = client.post(scope + "/products", headers=headers, json={
+        "name": "Fixture", "source_url": "https://shopee.co.th/item-i.123.456",
+    }).json()
+    calls = []
+    url = "https://s.shopee.co.th/fixture"
+
+    def generate(settings, source, tag):
+        calls.append((source, tag))
+        return url
+
+    monkeypatch.setattr(shopee_links, "generate_short_link", generate)
+    monkeypatch.setattr(shopee_links, "verify_destination", lambda *_args: "pending")
+    product_path = f"{path}/{product['id']}"
+    facebook = product_path + "/facebook"
+    payload = {"sub_id": "facebook456"}
+    assert client.post(facebook, headers=other_headers, json=payload).status_code == 404
+    assert client.post(facebook.replace(scope, other_scope), headers=other_headers, json=payload).status_code == 403
+    created = client.post(facebook, headers=headers, json=payload)
+    assert created.status_code == 200, created.text
+    assert created.json() == {"channel": "facebook", "affiliate_url": url, **payload, "shopee_verification": "pending"}
+    assert client.post(facebook, headers=headers, json=payload).json() == created.json()
+    assert client.post(product_path + "/tiktok", headers=headers, json=payload).status_code == 409
+    assert calls == [("https://shopee.co.th/product/123/456", "facebook456")]
+
+    review = {"affiliate_url": url, **payload}
+    assert client.post(facebook + "/review", headers=headers, json={**review, "sub_id": "wrong"}).status_code == 409
+    reviewed = client.post(facebook + "/review", headers=headers, json=review)
+    assert reviewed.json()["shopee_verification"] == "manual"
+    assert client.get(product_path, headers=headers).json() == [reviewed.json()]
+    response = client.patch(scope + "/products/" + product["id"], headers=headers,
+                            json={"source_url": "https://shopee.co.th/product/222/456"})
+    assert response.is_success
+    assert client.get(product_path, headers=headers).json()[0]["shopee_verification"] is None
+    monkeypatch.setattr(shopee_links, "verify_destination", lambda *_args: "mismatch")
+    assert client.post(facebook + "/review", headers=headers, json=review).status_code == 422
+    assert client.put(facebook, headers=headers, json=review).status_code == 422
+    assert client.post(product_path + "/tiktok", headers=headers, json={"sub_id": "tiktok456"}).status_code == 422
+    assert {link["channel"] for link in client.get(product_path, headers=headers).json()} == {"facebook"}
+
+
+def test_shopee_partner_link_cannot_use_the_open_api(client, monkeypatch):
+    headers = {"Authorization": f"Bearer {register(client)}"}
+    ws, = client.get("/api/v1/workspaces", headers=headers).json()
+    scope = "/api/v1/workspaces/" + ws["id"]
+    client.app.dependency_overrides[get_settings] = lambda: Settings(
+        shopee_affiliate_workspace_id=ws["id"], shopee_affiliate_partner_id="123",
+    )
+    path = scope + "/shopee-links"
+    assert client.get(path, headers=headers).json() == {"generate_enabled": True, "mode": "partner"}
+    product = client.post(scope + "/products", headers=headers, json={
+        "name": "Product", "source_url": "https://shopee.co.th/product/10/456",
+    }).json()
+
+    def unexpected_api_call(*_args):
+        pytest.fail("Partner link generation should never call the Open API")
+
+    monkeypatch.setattr(shopee_links, "generate_short_link", unexpected_api_call)
+    monkeypatch.setattr(shopee_links, "verify_destination", lambda *_args: "pending")
+    result = client.post(f"{path}/{product['id']}/facebook", headers=headers, json={"sub_id": "facebook456"})
+    assert result.status_code == 200, result.text
+    assert result.json() == {
+        "channel": "facebook", "sub_id": "facebook456", "shopee_verification": "pending",
+        "affiliate_url": "https://s.shopee.co.th/an_redir?origin_link=https%3A%2F%2Fshopee.co.th%2Fproduct%2F10%2F456"
+                         "&affiliate_id=123&sub_id=facebook456----",
+    }
 
 
 def test_register_login_and_persist_only_token_digest(client: TestClient):

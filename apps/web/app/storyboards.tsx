@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { AffiliateLink } from "./affiliate-link-setup";
+import { safariCaptureEnabled } from "./safari-capture";
 
 export type StoryboardSource = { kind: "offer" | "catalog"; id: string; name: string };
 type Scene = { seconds: number; action: string; dialogue: string };
@@ -166,6 +167,7 @@ export default function Storyboards({ scope, token, source, request, onCloseDraf
 
   useEffect(() => {
     setFlowUrl(localStorage.getItem(`flow-project:${scope}`) ?? "");
+    if (!safariCaptureEnabled) return;
     setFlowRequest(crypto.randomUUID());
     function receive(event: Event) {
       let response: FlowResponse;
@@ -431,13 +433,13 @@ export default function Storyboards({ scope, token, source, request, onCloseDraf
         <label>ลิงก์โปรเจกต์หรือคอลเลกชัน Flow<input type="url" value={flowUrl} placeholder={flowHome}
           onChange={(event) => setFlowUrl(event.target.value)} /></label>
         <div className="storyboard-actions">
-          <button type="button" className="primary" id="safari-flow-storyboard" data-request-id={flowRequest}
+          {safariCaptureEnabled && <button type="button" className="primary" id="safari-flow-storyboard" data-request-id={flowRequest}
             disabled={busy || !flowReady || !flowRequest} onClick={() => void generateInFlow(board)}>
             สร้าง Storyboard ภาพนิ่งใน Flow
-          </button>
+          </button>}
           <button type="button" className="secondary" onClick={openFlow}>คัดลอกพรอมป์และเปิด Flow</button>
         </div>
-        {!flowReady && <p className="muted">เปิด Studio ใน Safari พร้อมส่วนขยาย Affiliate Studio Capture 0.3.0 เพื่อสร้างและรับภาพอัตโนมัติ</p>}
+        {safariCaptureEnabled && !flowReady && <p className="muted">เปิด Studio ใน Safari พร้อมส่วนขยาย Affiliate Studio Capture 0.3.0 เพื่อสร้างและรับภาพอัตโนมัติ</p>}
         {resultLink?.id === board.id && <a href={resultLink.url} target="_blank" rel="noreferrer">เปิดภาพต้นฉบับใน Flow</a>}
         <label>พรอมป์สำหรับสร้างภาพนิ่ง<textarea readOnly rows={8} value={prompt} /></label>
         <form key={board.id} onSubmit={(event) => importImage(event, board)}>

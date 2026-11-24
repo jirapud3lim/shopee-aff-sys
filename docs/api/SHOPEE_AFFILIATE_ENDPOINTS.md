@@ -12,3 +12,5 @@ Source: [Shopee's official API catalog](https://affiliate.shopee.co.th/open_api/
 | Campaigns | [`shopeeOfferV2`](https://affiliate.shopee.co.th/open_api/list?type=shopee_offer) and [`shopOfferV2`](https://affiliate.shopee.co.th/open_api/list?type=brand_offer) | Find platform campaigns and shop-specific offers. |
 
 Report cursors are single-use and expire after 30 seconds according to the portal. Keep manual entry and CSV import available. Record permission to reuse product imagery before rendering.
+
+Studio's `generateShortLink` adapter targets the fixed Thailand endpoint and signs the exact serialized GraphQL body with the server-side credential. The request contract and constrained redirect checks are covered by fixtures. The Thai portal's authenticated schema and a live response still need verification before production activation. The app requires an approved App ID and Secret and limits generation to the configured Studio workspace owner. [Shopee TH account approval](https://help.shopee.co.th/portal/4/article/198622)
