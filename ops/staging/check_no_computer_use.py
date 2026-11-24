@@ -24,7 +24,7 @@ for tool in codex playwright puppeteer chromedriver geckodriver google-chrome ch
         exit 1
     fi
 done
-unexpected=$(find /app "$1" \( -name .codex -o -name safari-extension -o -name 'cua_repl*' \
+unexpected=$(find /app "$1" \( -name .codex -o -name safari-extension -o -path "*/apps/extension" -o -name 'cua_repl*' \
     -o -path '*/node_modules/playwright*' -o -path '*/node_modules/puppeteer*' \
     -o -path '*/node_modules/@playwright' -o -path '*/site-packages/playwright*' \
     -o -path '*/site-packages/selenium*' -o -name auth.json -o -name .env -o -name '.env.*' \) -print -quit)

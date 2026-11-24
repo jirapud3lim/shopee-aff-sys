@@ -44,7 +44,15 @@ IMAGE_FORMATS = {
     "image/png": "PNG",
     "image/webp": "WEBP",
 }
-DEFAULT_RENDER_ROOT = Path(__file__).resolve().parents[1] / ".local" / "renders"
+DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / ".local"
+
+
+def data_dir() -> Path:
+    """Runtime data root. Override with STUDIO_DATA_DIR; RENDER_ROOT still wins for renders."""
+    return Path(os.environ.get("STUDIO_DATA_DIR") or DEFAULT_DATA_DIR).expanduser().resolve()
+
+
+DEFAULT_RENDER_ROOT = DEFAULT_DATA_DIR / "renders"
 
 
 class Render(Base):
@@ -78,7 +86,7 @@ class RenderOut(BaseModel):
 
 
 def render_root() -> Path:
-    return Path(os.environ.get("RENDER_ROOT", str(DEFAULT_RENDER_ROOT))).expanduser().resolve()
+    return Path(os.environ.get("RENDER_ROOT") or data_dir() / "renders").expanduser().resolve()
 
 
 def render_video_path(render: Render) -> Path:

@@ -18,6 +18,7 @@ backend/local.db*
 spikes/phase0_publish/*.egg-info/
 
 backend/.local/
-drafts/fbkitchen01/preview/*.png
-drafts/fbkitchen01/preview/*.jpg
-drafts/fbkitchen01/preview/*.mp4
+docs/evidence/fbkitchen01/preview/*.png
+docs/evidence/fbkitchen01/preview/*.jpg
+docs/evidence/fbkitchen01/preview/*.mp4
+.ruff_cache/

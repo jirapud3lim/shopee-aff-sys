@@ -13,7 +13,7 @@ Build a secure multi-tenant SaaS. First deliver authorized **Shopee product/affi
 
 ## Stack and layout
 - `apps/web`: Next.js + TypeScript + Tailwind + shadcn/ui
-- `apps/extension`: Chrome Manifest V3, only when permitted
+- `apps/extension`: browser extension (currently Safari Capture; Chrome Manifest V3 only when permitted)
 - `backend`: Python FastAPI, SQLAlchemy, Alembic, Pydantic
 - PostgreSQL; Redis + Celery; FFmpeg; S3-compatible object storage; Docker
 - Provider adapters: Meta, Shopee (if authorized), Google AI (later).
