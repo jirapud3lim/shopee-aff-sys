@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { safariCaptureEnabled } from "./safari-capture";
+import { safariCaptureEnabled } from "@/lib/safari-capture";
 
 const portal = "https://affiliate.shopee.co.th/offer/product_offer";
 const numbers = new Intl.NumberFormat("th-TH");

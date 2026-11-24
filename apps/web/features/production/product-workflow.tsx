@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { channelLabels } from "./affiliate-links";
-import AffiliateLinkSetup, { type AffiliateLink, type CatalogProduct } from "./affiliate-link-setup";
-import type { StudioRequest } from "./meta-publishing";
-import { ProductMetrics, type DiscoverySelection } from "./product-discovery";
-import Storyboards, { type Board } from "./storyboards";
+import { channelLabels } from "@/features/affiliate/affiliate-links";
+import AffiliateLinkSetup, { type AffiliateLink, type CatalogProduct } from "@/features/affiliate/affiliate-link-setup";
+import type { StudioRequest } from "@/features/publishing/meta-publishing";
+import { ProductMetrics, type DiscoverySelection } from "@/features/discovery/product-discovery";
+import Storyboards, { type Board } from "@/features/production/storyboards";
 
 const stages = ["พรอมป์ Storyboard", "อนุมัติภาพนิ่ง", "สร้างวิดีโอ", "ตรวจพรีวิว", "เตรียมเผยแพร่"];
 const presenter = "https://flow.google.com/project/81d65799-15e1-4834-b708-4e17857d09ff/character/0e74b82c-79cb-43da-badb-dc5e6d520d35";

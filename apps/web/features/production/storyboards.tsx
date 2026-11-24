@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import type { AffiliateLink } from "./affiliate-link-setup";
-import { safariCaptureEnabled } from "./safari-capture";
+import type { AffiliateLink } from "@/features/affiliate/affiliate-link-setup";
+import { safariCaptureEnabled } from "@/lib/safari-capture";
 
 export type StoryboardSource = { kind: "offer" | "catalog"; id: string; name: string };
 type Scene = { seconds: number; action: string; dialogue: string };

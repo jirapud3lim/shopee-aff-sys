@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { listingItemId, type CatalogProduct, type Selection } from "./affiliate-link-setup";
-import type { StudioRequest } from "./meta-publishing";
-import { estimatedCommission, visiblePrice, type Offer } from "./shopee-offers";
+import { listingItemId, type CatalogProduct, type Selection } from "@/features/affiliate/affiliate-link-setup";
+import type { StudioRequest } from "@/features/publishing/meta-publishing";
+import { estimatedCommission, visiblePrice, type Offer } from "@/features/discovery/shopee-offers";
 
 type Trend = {
   title: string;

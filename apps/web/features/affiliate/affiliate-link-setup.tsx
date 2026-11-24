@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { channelLabels } from "./affiliate-links";
-import { safariCaptureEnabled } from "./safari-capture";
+import { channelLabels } from "@/features/affiliate/affiliate-links";
+import { safariCaptureEnabled } from "@/lib/safari-capture";
 
 export type Selection = { kind: "offer" | "catalog"; id: string; name: string };
 export type AffiliateJourney = { trend: string; offer: Selection | null };

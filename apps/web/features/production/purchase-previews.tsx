@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import type { StudioRequest } from "./meta-publishing";
-import { safariCaptureEnabled } from "./safari-capture";
+import type { StudioRequest } from "@/features/publishing/meta-publishing";
+import { safariCaptureEnabled } from "@/lib/safari-capture";
 
 type Asset = { source: "shopee" | "google"; file: string; url: string };
 type Preview = {

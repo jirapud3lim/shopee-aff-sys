@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import type { StudioRequest } from "./meta-publishing";
+import type { StudioRequest } from "@/features/publishing/meta-publishing";
 
 type RenderOption = { id: string; name: string };
 type Job = {

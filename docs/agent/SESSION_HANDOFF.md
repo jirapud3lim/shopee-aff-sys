@@ -1,5 +1,10 @@
 # Session handoff
 
+## Web features split (2026-11-24)
+
+- Moved the 12 Studio components from `apps/web/app/` into `apps/web/features/{discovery,affiliate,production,publishing}/` and `safari-capture.ts` into `apps/web/lib/`. Imports now use an `@/*` alias added to `tsconfig.json`; `app/` keeps `page.tsx`, `layout.tsx`, `studio.css` and the API route. No behavior change. `StudioRequest` still lives in `publishing/meta-publishing.tsx` and should move to `lib/` in a later cleanup.
+- Verified TypeScript, `next build`, and the Docker staging smoke (API release check, clean browser in all three Shopee modes, no-Computer-Use check). Not rerun: backup/restore drill and the launcher start.
+
 ## Backend package split (2026-11-24)
 
 - Moved the 17 flat backend modules into `app/core`, `catalog`, `content`, `publishing` and `insights` with `git mv`, switched imports and monkeypatch strings to absolute `app.<package>.<module>` paths, and fixed the `__file__`-relative paths in `core/config.py` and `content/renders.py`. The worker command is now `python -m app.publishing.campaign_worker` in `compose.staging.yml`. No behavior change.

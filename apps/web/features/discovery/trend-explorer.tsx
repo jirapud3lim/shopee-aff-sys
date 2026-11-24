@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import type { StudioRequest } from "./meta-publishing";
+import type { StudioRequest } from "@/features/publishing/meta-publishing";
 
 type Points = { trend: number; relevance: number; clicks: number; orders: number };
 type Opportunity = {

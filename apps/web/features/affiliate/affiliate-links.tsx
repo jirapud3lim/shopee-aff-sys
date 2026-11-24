@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import type { StudioRequest } from "./meta-publishing";
+import type { StudioRequest } from "@/features/publishing/meta-publishing";
 
 export const channelLabels: Record<string, string> = {
   facebook: "Facebook", instagram: "Instagram", tiktok: "TikTok",

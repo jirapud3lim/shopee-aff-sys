@@ -1,18 +1,18 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import AffiliateLinks, { channelLabels } from "./affiliate-links";
-import AffiliateLinkSetup, { emptyJourney, readJourney, type AffiliateJourney, type AffiliateLink, type CatalogProduct } from "./affiliate-link-setup";
-import AffiliateResults from "./affiliate-results";
-import Campaigns from "./campaigns";
-import MetaPublishing from "./meta-publishing";
-import ProductDiscovery, { type DiscoverySelection } from "./product-discovery";
-import ProductWorkflow from "./product-workflow";
-import PurchasePreviews from "./purchase-previews";
-import ShopeeOffers from "./shopee-offers";
-import Storyboards, { type Board, type StoryboardSource } from "./storyboards";
-import TikTokPublishing from "./tiktok-publishing";
-import TrendExplorer from "./trend-explorer";
+import AffiliateLinks, { channelLabels } from "@/features/affiliate/affiliate-links";
+import AffiliateLinkSetup, { emptyJourney, readJourney, type AffiliateJourney, type AffiliateLink, type CatalogProduct } from "@/features/affiliate/affiliate-link-setup";
+import AffiliateResults from "@/features/affiliate/affiliate-results";
+import Campaigns from "@/features/publishing/campaigns";
+import MetaPublishing from "@/features/publishing/meta-publishing";
+import ProductDiscovery, { type DiscoverySelection } from "@/features/discovery/product-discovery";
+import ProductWorkflow from "@/features/production/product-workflow";
+import PurchasePreviews from "@/features/production/purchase-previews";
+import ShopeeOffers from "@/features/discovery/shopee-offers";
+import Storyboards, { type Board, type StoryboardSource } from "@/features/production/storyboards";
+import TikTokPublishing from "@/features/publishing/tiktok-publishing";
+import TrendExplorer from "@/features/discovery/trend-explorer";
 
 type Workspace = { id: string; name: string; role: string };
 type Product = CatalogProduct;
