@@ -81,4 +81,10 @@
 
 
 
+## YouTube AI Storytelling EP.1 (2026-11-24)
+
+- [YouTube AI Storytelling production spreadsheet](https://docs.google.com/spreadsheets/d/1SzPRrNgMzBp0beFBLTHJ2n-P9Gy4nS1HkmjQXOIpVxs/edit) contains the 10-episode plan, visual style guide, EP.1 script and shot prompts, and EP.1 Shorts board.
+- [YouTube AI Storytelling Drive folder](https://drive.google.com/drive/folders/11-p8uliEmZ71pS2S2Agq3Ej5XM4JURGs) contains the [EP.1 Keyframes folder](https://drive.google.com/drive/folders/1v4JUbUOSArx28yX_F1lI2Iqxu_bXV7cy) with all 24 original PNGs, named `S01-01.png` through `S06-04.png`.
+- Built and visually reviewed 24 ImageGen starting frames for the fictional blackout episode. Verified each PNG is 1664 × 936 and checked the ZIP contents. The frame review, source prompts, motion prompts, and transition notes are in `output/imagegen/ep01-keyframes/`. The episode is at the still-frame review stage.
+
 Older entries: [archive](archive/SESSION_HANDOFF_2026-11-23_and_earlier.md).
