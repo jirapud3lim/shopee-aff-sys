@@ -35,19 +35,27 @@ jobs:
     timeout-minutes: 15
     env:
       COMPOSE_PROJECT_NAME: affiliate-staging-ci
+      COMPOSE_FILE: compose.staging.yml:ops/staging/compose.no-computer-use.yml
     steps:
       - uses: actions/checkout@v4
       - run: (umask 077 && openssl rand -hex 32 > .env.staging-db-password)
-      - run: docker compose -f compose.staging.yml up --build -d --wait --wait-timeout 180
-      - run: python3 ops/staging/smoke.py
+      - run: docker compose up --build -d --wait --wait-timeout 180
+      - name: Verify release without Computer Use
+        run: |
+          docker compose exec -T -u studio -e STAGING_WEB_ORIGIN=http://web:3000 -e STAGING_PROM_ORIGIN=http://prometheus:9090 api python - --release < ops/staging/smoke.py
+          docker compose build browser
+          docker compose run --rm --no-deps -T browser
+          docker compose run --rm --no-deps -T -e STUDIO_SHOPEE_MOCK=1 browser
+          docker compose run --rm --no-deps -T -e STUDIO_SHOPEE_MOCK=partner browser
+          python3 ops/staging/check_no_computer_use.py
       - name: Verify backup, restore and monitoring
         run: |
           backup_id=$(bash ops/staging/backup.sh)
-          docker compose -f compose.staging.yml run --rm -T backup restore-check "$backup_id"
-          python3 ops/staging/smoke.py --backup-metric
-          docker compose -f compose.staging.yml exec -T prometheus /bin/promtool check config /etc/prometheus/prometheus.yml
+          docker compose run --rm -T backup restore-check "$backup_id"
+          docker compose exec -T -u studio -e STAGING_PROM_ORIGIN=http://prometheus:9090 api python - --backup-metric < ops/staging/smoke.py
+          docker compose exec -T prometheus /bin/promtool check config /etc/prometheus/prometheus.yml
           docker run --rm -v "$PWD/ops/staging:/rules:ro" -w /rules --entrypoint /bin/promtool prom/prometheus:v3.5.0 test rules alerts.test.yml
       - if: failure()
-        run: docker compose -f compose.staging.yml logs --tail=100
+        run: docker compose logs --tail=100
       - if: always()
-        run: docker compose -f compose.staging.yml down -v
+        run: docker compose down -v

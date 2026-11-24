@@ -1,6 +1,6 @@
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
-ENV NEXT_TELEMETRY_DISABLED=1 STUDIO_API_ORIGIN=http://api:8001
+ENV NEXT_TELEMETRY_DISABLED=1 STUDIO_API_ORIGIN=http://api:8001 NEXT_PUBLIC_STUDIO_SAFARI_CAPTURE=0
 COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci
 COPY apps/web/ ./

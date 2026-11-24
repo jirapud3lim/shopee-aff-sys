@@ -1,5 +1,37 @@
 # Session handoff
 
+## Public Shopee extraction trial (2026-11-24)
+
+- Parsed the accessibility tree in the user's already-open Safari window. It exposed 16 distinct Flash Sale cards with names, displayed prices and sales labels. These cards linked to the Flash Sale page and did not expose listing IDs or Affiliate commission.
+- One direct, session-free public HTTPS request returned HTTP 200 with zero product listing anchors and no sample card name in the HTML. A clean session-free Chromium trial also returned HTTP 200 and exposed zero matching price rows or listing links in the observed window. This verifies one read from Safari's rendered page. Standalone extraction and Studio import remain unverified. No account or Affiliate data was changed.
+
+## PRD-03 non-API partner link trial (2026-11-24)
+
+- Reviewed Shopee Thailand's [partner link wrapping](https://help.shopee.co.th/portal/10/article/172214) and [Affiliate Portal batch link](https://help.shopee.co.th/portal/10/article/123906) instructions. Added opt-in partner URL generation with the workspace-scoped Affiliate ID and no Open API credentials. The first tracking slot holds the channel Sub ID. Available redirect evidence must match the listing, publisher and Sub ID.
+- Verified the URL and tracking with fixtures, failed any attempted Open API call in the non-API endpoint test, and reached Storyboard in Chromium with the mocked partner response. Backend pytest passed 36 with three FFmpeg-dependent skips. TypeScript and diff checks passed. Account eligibility and attribution in the real Shopee Click Report remain unverified. No live link was generated.
+
+## PRD-03 automatic Shopee Affiliate links (2026-11-24)
+
+- Added a server-side Thai Shopee `generateShortLink` adapter gated to the configured workspace owner. Studio reuses saved links, supports one-click generation for a selected listing and Sub ID, and retains manual copy/paste. The setup checks known listing and tag mismatches, uses bounded allowlisted HTTPS HEAD redirects, and records operator review of saved channel links. Existing link APIs retain their response contracts.
+- Verified the signed request, redirect limits, mismatch handling, link reuse and workspace isolation using fixtures. Backend pytest reported 30 passed and three FFmpeg-dependent skips. TypeScript, diff checks, and SQLite migration upgrade, downgrade and drift checks passed. Manual and mocked automatic UI workflows reached storyboard approval on the isolated production-mode Docker stack. PostgreSQL smoke and the Computer Use artifact, network and log checks passed.
+- No App ID or Secret is configured locally. Live Thai Shopee API authorization, exact authenticated schema and link read-back remain pending. No credentials were exposed, and no live link or post was created.
+
+## PRD-01 release check (2026-11-24)
+
+- Built the production-mode web, API and worker containers on an internal Docker network. The artifact and service checks passed. Isolated Chromium saved a manual Affiliate link, imported a storyboard and approved a shot with zero Safari bridge or external browser requests. Safari Capture is disabled in the container web build and remains available in local development.
+- The PostgreSQL smoke test passed link and storyboard checks, a 1080 × 1920 H.264 MP4 fixture import and full decode, a worker simulation with Affiliate comment read-back, live write guards, CSV attribution and deduplication, and worker metrics. Fixed PostgreSQL report import counts by using returned rows when psycopg reports an unknown rowcount. TypeScript and diff checks passed. Local backend pytest reported 22 passed with three FFmpeg-dependent skips.
+- Added the fixture-only release checks to GitHub Actions. The local backup and restore drill, backup-age metric, Prometheus config and alert rules also passed with the isolated configuration. Hosted CI and live-provider verification remain pending. No live post or deployment was made.
+
+## Production without Codex Computer Use (2026-11-24)
+
+- Recorded the deployment constraint in AGENTS.md and linked the eight-stage [Computer Use audit](../product/COMPUTER_USE_AUDIT.md) and ten [open backlog tickets](../backlog/PRODUCTION_NO_COMPUTER_USE.md). The first production path uses operator handoffs and existing approved APIs. Google Cloud Veo Lite access, Flow character and Callirrhoe parity, Shopee API scopes, and TikTok Inbox Upload remain verification tasks. No runtime, provider access or publishing changes were made.
+
+## Project status check (2026-11-24)
+
+- Phase 7 remains active. Local HEAD and the cached upstream both pointed to `80811b0`, and the worktree was clean before this note. Ports 3014 and 8001 had no listeners. This check reviewed existing verification records and did not rerun the test suites.
+- Reviewed the current Studio features in pipeline order against the workflow documentation and product workflow code. No runtime checks were repeated.
+- Audited Codex Computer Use separately from Studio runtime integrations. Repository code uses Safari Capture, server APIs and FFmpeg without a Codex Computer Use dependency. Codex tool history confirms Computer Use for live Shopee offer and variant checks, Affiliate link creation, Flow stills and video, and source clip inspection. The reviewed records did not establish the exact UI tool for Facebook/TikTok upload or for Shopee report processing.
+
 ## A-100cm white Flow review (2026-11-24)
 
 - Used the approved storyboard panels 01, 02 v2, 03 and 04 for the DoCoMall A-100cm white variant, Shopee Shop `393014471` / Item `44610002166`, with the saved presenter's Callirrhoe voice off-screen. Flow rejected combining an exact first-frame lock with the audio reference, then produced four clips from the approved image references with Veo 3.1 Lite at 9:16 for 40 credits.

@@ -2,7 +2,8 @@
 # Stop staging writers for the PostgreSQL and media snapshot.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-compose=(docker compose -f compose.staging.yml)
+export COMPOSE_FILE="${COMPOSE_FILE:-compose.staging.yml}"
+compose=(docker compose)
 lock=.env.staging-backup-lock
 mkdir "$lock" 2>/dev/null || { echo "A staging backup is already running" >&2; exit 1; }
 services=()

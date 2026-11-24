@@ -1,4 +1,7 @@
 .git
+**/.codex
+**/.aws
+apps/safari-extension
 .env
 .env.*
 **/.env

@@ -1,0 +1,13 @@
+# Applies to the fixture-only release check. Normal staging can reach approved providers.
+services:
+  browser:
+    profiles: [test]
+    build:
+      context: .
+      dockerfile: ops/staging/browser.Dockerfile
+    init: true
+    network_mode: service:web
+
+networks:
+  default:
+    internal: true

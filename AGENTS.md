@@ -2,6 +2,10 @@
 
 Follow the project's [operating instructions](CLAUDE.md). Apply the product rules to every Studio product, regardless of category or discovery source. Apply the Google Flow workflow whenever preparing or generating video in Flow, including a single insert, a batch of scenes, or an added shot.
 
+## Production deployment
+
+Keep Codex Computer Use out of production artifacts and runtime, including web, API, workers, scheduled jobs and delegated services. Production workflows use supported APIs or operator handoffs. See the [pipeline audit](docs/product/COMPUTER_USE_AUDIT.md) and [open production tickets](docs/backlog/PRODUCTION_NO_COMPUTER_USE.md).
+
 ## Product pipeline rules
 
 1. **Keep the same product throughout.** Verify the Shopee Shop ID, Item ID, and selected variant where applicable. Carry that identity through Affiliate link capture, storyboard, export, and publication. Verify that the saved link reaches the selected listing and is associated with the intended channel. If the listing opens a shared variant picker, state the selected variant clearly in the video and caption where applicable.

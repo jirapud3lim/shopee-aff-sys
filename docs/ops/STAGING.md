@@ -18,6 +18,27 @@ python3 ops/staging/smoke.py
 - The smoke test creates a staging-only account and product, renders an MP4, queues a simulated Reel and comment, checks the worker and Prometheus, and verifies that live writes are rejected.
 - Set `STAGING_WEB_PORT` and `STAGING_MONITOR_PORT` before startup to use different ports.
 
+## Verify the release without Computer Use
+
+GitHub Actions tests the production-mode web, API and worker images in a fixture-only stack with an internal Docker network. Safari Capture is disabled in the container web build. The browser runs as a separate test service and reaches Studio over loopback in the web container's network namespace. The test makes no provider requests from the browser and can run without a Safari extension, browser profile or provider credentials.
+
+Run from the repository root with a fresh project and a staging database secret. Use the existing start instructions to create the secret if needed.
+
+```sh
+export COMPOSE_PROJECT_NAME=studio-release-check
+export COMPOSE_FILE=compose.staging.yml:ops/staging/compose.no-computer-use.yml
+docker compose up --build -d --wait --wait-timeout 180
+docker compose exec -T -u studio \
+  -e STAGING_WEB_ORIGIN=http://web:3000 -e STAGING_PROM_ORIGIN=http://prometheus:9090 \
+  api python - --release < ops/staging/smoke.py
+docker compose build browser
+docker compose run --rm --no-deps -T browser
+python3 ops/staging/check_no_computer_use.py
+docker compose down -v
+```
+
+The API smoke check covers channel link storage, storyboard import and approval, MP4 import and full decode, simulation with comment read-back, live-write guards, report CSV deduplication and the worker metrics. The browser checks the manual link and storyboard controls and records any bridge events or external requests. The artifact check inspects running images and service configuration for Computer Use components, credentials and mounts, then checks the runtime network and application logs. The fixture run does not establish live provider access.
+
 ## Backup and restore
 
 ```sh
