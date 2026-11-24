@@ -5,7 +5,7 @@ import math
 import subprocess
 from pathlib import Path
 
-from .renders import _run_render, _write_scene_captions
+from app.content.renders import _run_render, _write_scene_captions
 
 MAX_FLOW_BYTES = 48 * 1024 * 1024
 FPS = 30

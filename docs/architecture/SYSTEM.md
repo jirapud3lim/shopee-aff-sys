@@ -18,6 +18,8 @@ Single FastAPI codebase, one PostgreSQL, Celery workers on Redis. Modules talk t
 
 Pure domain logic (state machines, key derivation, reconcile decisions) lives in each module's `domain/` with no I/O; adapters in `adapters/`. Prototype: `spikes/phase0_publish`.
 
+Current backend layout (`backend/app/`): `core` (config, db, models, auth), `catalog` (products, Shopee offers and links), `content` (storyboards, renders, previews), `publishing` (Meta, campaigns, worker) and `insights` (Google Trends, Affiliate reports); `main.py` and `operations.py` stay at the root. Run the worker with `python -m app.publishing.campaign_worker`. The per-module `domain/` split above is still a target and will move over one module at a time.
+
 ## 2. Context diagram
 ```mermaid
 flowchart LR

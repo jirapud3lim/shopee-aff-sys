@@ -10,9 +10,9 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from .campaigns import Campaign, CampaignItem, CampaignWorkerState
-from .db import get_db
-from .renders import render_root
+from app.content.renders import render_root
+from app.core.db import get_db
+from app.publishing.campaigns import Campaign, CampaignItem, CampaignWorkerState
 
 router = APIRouter(prefix="/internal", include_in_schema=False)
 BACKUP_RECEIPT = Path("/var/lib/studio/backups/last-success")

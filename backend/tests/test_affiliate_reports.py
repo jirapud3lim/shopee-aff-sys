@@ -6,11 +6,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.affiliate_reports import router
-from app.auth import WorkspaceContext, require_workspace
-from app.db import Base, get_db
-from app.models import Organization
-from app.products import ChannelLink, Product
+from app.catalog.products import ChannelLink, Product
+from app.core.auth import WorkspaceContext, require_workspace
+from app.core.db import Base, get_db
+from app.core.models import Organization
+from app.insights.affiliate_reports import router
 
 CLICK_CSV = """รหัสคลิก,เวลาคลิก,ภาคที่คลิก,Sub_id,อ้างอิง
 C1,2026-11-20 08:00:00,Thailand,fbcloth01----,https://l.facebook.com/

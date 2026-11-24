@@ -4,21 +4,21 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.affiliate_reports import router as affiliate_reports_router
-from app.auth import current_user, hash_password, issue_session, token_digest, verify_password
-from app.campaigns import router as campaigns_router
-from app.db import get_db
-from app.google_trends import router as google_trends_router
-from app.meta_publishing import router as meta_publishing_router
-from app.models import Organization, OrganizationMember, SessionToken, User
+from app.catalog.products import router as products_router
+from app.catalog.shopee_links import router as shopee_links_router
+from app.catalog.shopee_offers import router as shopee_offers_router
+from app.content.purchase_previews import router as purchase_previews_router
+from app.content.renders import router as renders_router
+from app.content.storyboards import router as storyboards_router
+from app.core.auth import current_user, hash_password, issue_session, token_digest, verify_password
+from app.core.db import get_db
+from app.core.models import Organization, OrganizationMember, SessionToken, User
+from app.insights.affiliate_reports import router as affiliate_reports_router
+from app.insights.google_trends import router as google_trends_router
 from app.operations import router as operations_router
-from app.products import router as products_router
-from app.publishing import router as publishing_router
-from app.purchase_previews import router as purchase_previews_router
-from app.renders import router as renders_router
-from app.shopee_links import router as shopee_links_router
-from app.shopee_offers import router as shopee_offers_router
-from app.storyboards import router as storyboards_router
+from app.publishing.campaigns import router as campaigns_router
+from app.publishing.meta_publishing import router as meta_publishing_router
+from app.publishing.publishing import router as publishing_router
 
 app = FastAPI(
     title="Shopee Affiliate Automation API",

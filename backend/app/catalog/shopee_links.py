@@ -10,11 +10,25 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .auth import WorkspaceContext, require_workspace
-from .config import Settings, get_settings
-from .db import get_db
-from .products import Channel, ChannelLink, ChannelLinkInput, ChannelLinkReview, Product, list_channel_links, persist_channel_link
-from .shopee_affiliate import ShopeeError, generate_short_link, listing_identity, partner_tracking_link, verify_destination
+from app.catalog.products import (
+    Channel,
+    ChannelLink,
+    ChannelLinkInput,
+    ChannelLinkReview,
+    Product,
+    list_channel_links,
+    persist_channel_link,
+)
+from app.catalog.shopee_affiliate import (
+    ShopeeError,
+    generate_short_link,
+    listing_identity,
+    partner_tracking_link,
+    verify_destination,
+)
+from app.core.auth import WorkspaceContext, require_workspace
+from app.core.config import Settings, get_settings
+from app.core.db import get_db
 
 router = APIRouter(prefix="/api/v1/workspaces/{workspace_id}/shopee-links", tags=["shopee affiliate"])
 Context = Annotated[WorkspaceContext, Depends(require_workspace)]

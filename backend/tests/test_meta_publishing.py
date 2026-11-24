@@ -5,14 +5,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app import meta_publishing
-from app.auth import WorkspaceContext, require_workspace
-from app.config import Settings, get_settings
-from app.db import Base, get_db
-from app.meta_graph import MetaError
-from app.models import Organization
-from app.products import ChannelLink, Product
-from app.renders import Render
+from app.catalog.products import ChannelLink, Product
+from app.content.renders import Render
+from app.core.auth import WorkspaceContext, require_workspace
+from app.core.config import Settings, get_settings
+from app.core.db import Base, get_db
+from app.core.models import Organization
+from app.publishing import meta_publishing
+from app.publishing.meta_graph import MetaError
 
 
 class FakePage:

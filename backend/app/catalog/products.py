@@ -22,12 +22,21 @@ from pydantic import (
     ValidationError,
     field_validator,
 )
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint, null, select, update
+from sqlalchemy import (
+    ForeignKey,
+    ForeignKeyConstraint,
+    String,
+    Text,
+    UniqueConstraint,
+    null,
+    select,
+    update,
+)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
-from .auth import require_workspace
-from .db import Base, get_db
+from app.core.auth import require_workspace
+from app.core.db import Base, get_db
 
 router = APIRouter(prefix="/api/v1/workspaces/{workspace_id}/products", tags=["products"])
 

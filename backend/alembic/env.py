@@ -3,9 +3,13 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from app import affiliate_reports, campaigns, meta_publishing, models, products, publishing, renders, shopee_offers  # noqa: F401
-from app.config import get_settings
-from app.db import Base
+from app.catalog import products, shopee_offers
+from app.content import renders  # noqa: F401
+from app.core import models
+from app.core.config import get_settings
+from app.core.db import Base
+from app.insights import affiliate_reports
+from app.publishing import campaigns, meta_publishing, publishing
 
 config = context.config
 if config.config_file_name is not None:

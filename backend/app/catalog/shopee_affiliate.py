@@ -8,7 +8,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlencode, urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
-from .config import Settings
+from app.core.config import Settings
 
 ENDPOINT = "https://open-api.affiliate.shopee.co.th/graphql"
 LISTING_HOSTS = {"shopee.co.th", "www.shopee.co.th"}

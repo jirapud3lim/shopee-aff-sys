@@ -1,27 +1,27 @@
 """Thailand Trending Now results and explainable workspace product matches."""
 
+import re
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from math import log1p
-import re
 from threading import Lock
 from typing import Annotated, Literal
 from unicodedata import normalize
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
-import xml.etree.ElementTree as ET
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .affiliate_reports import product_activity
-from .auth import WorkspaceContext, require_workspace
-from .db import get_db
-from .products import Product
-from .shopee_report_csv import BANGKOK
-from .shopee_offers import ShopeeOffer
+from app.catalog.products import Product
+from app.catalog.shopee_offers import ShopeeOffer
+from app.core.auth import WorkspaceContext, require_workspace
+from app.core.db import get_db
+from app.insights.affiliate_reports import product_activity
+from app.insights.shopee_report_csv import BANGKOK
 
 FEED_URL = "https://trends.google.com/trending/rss?geo=TH"
 SOURCE_URL = "https://trends.google.com/trending?geo=TH"

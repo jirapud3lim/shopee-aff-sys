@@ -7,12 +7,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.auth import require_workspace
-from app.config import Settings, get_settings
-from app.db import Base, get_db
+from app.catalog import shopee_links
+from app.core.auth import require_workspace
+from app.core.config import Settings, get_settings
+from app.core.db import Base, get_db
+from app.core.models import SessionToken, User
 from app.main import app
-from app.models import SessionToken, User
-from app import shopee_links
 
 
 @pytest.fixture()
@@ -229,8 +229,8 @@ def test_purchase_preview_collects_assets_without_creating_publishable_render(cl
         image.save(buffer, format="JPEG")
         return buffer.getvalue(), image.convert("RGBA"), "jpg"
 
-    monkeypatch.setattr("app.purchase_previews.fetch_image", collect)
-    monkeypatch.setattr("app.purchase_previews._render", lambda inputs, output, scenes: output.write_bytes(b"mp4"))
+    monkeypatch.setattr("app.content.purchase_previews.fetch_image", collect)
+    monkeypatch.setattr("app.content.purchase_previews._render", lambda inputs, output, scenes: output.write_bytes(b"mp4"))
     item = endpoint + "/" + saved["id"]
     preview = client.post(item + "/render", headers=headers).raise_for_status().json()
     assert [asset["source"] for asset in preview["assets"]] == ["google", "shopee", "google"]
@@ -262,7 +262,7 @@ def test_purchase_preview_collects_assets_without_creating_publishable_render(cl
         output.write_bytes(b"composite")
         return 4.0
 
-    monkeypatch.setattr("app.purchase_previews.render_flow_preview", render_flow)
+    monkeypatch.setattr("app.content.purchase_previews.render_flow_preview", render_flow)
     photo_first = client.post(
         flow, headers=headers, data={"opening_text": "ขวดน้ำพกไปทำงาน", "product_first": "true"},
         files={"clip": ("clip.mp4", b"local MP4", "video/mp4")},
@@ -286,7 +286,7 @@ def test_pipeline_scoping_and_idempotency(client: TestClient, tmp_path, monkeypa
     from PIL import Image
 
     monkeypatch.setenv("RENDER_ROOT", str(tmp_path))
-    monkeypatch.setattr("app.renders._render", lambda inputs, output, scenes: output.write_bytes(b"mp4"))
+    monkeypatch.setattr("app.content.renders._render", lambda inputs, output, scenes: output.write_bytes(b"mp4"))
 
     first = {"Authorization": f"Bearer {register(client, 'first@example.com')}"}
     second = {"Authorization": f"Bearer {register(client, 'second@example.com')}"}

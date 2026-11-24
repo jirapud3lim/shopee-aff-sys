@@ -6,8 +6,8 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from app import shopee_affiliate as shopee
-from app.config import Settings
+from app.catalog import shopee_affiliate as shopee
+from app.core.config import Settings
 
 
 @pytest.mark.parametrize("target, expected", [

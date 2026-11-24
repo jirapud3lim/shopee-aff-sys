@@ -13,8 +13,8 @@ import sys
 import uuid
 from datetime import datetime, timezone
 from io import BytesIO
-from pathlib import Path
 from itertools import accumulate
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
@@ -24,10 +24,17 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 from sqlalchemy import DateTime, ForeignKeyConstraint, String, Text, UniqueConstraint, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
-from .auth import require_workspace
-from .db import Base, get_db
-from .products import Product
-from .reel_timeline import FPS, REEL_FRAMES, SCENE_TEXT_LIMIT, ReelPlan, TimelineShot, compile_timeline
+from app.catalog.products import Product
+from app.content.reel_timeline import (
+    FPS,
+    REEL_FRAMES,
+    SCENE_TEXT_LIMIT,
+    ReelPlan,
+    TimelineShot,
+    compile_timeline,
+)
+from app.core.auth import require_workspace
+from app.core.db import Base, get_db
 
 router = APIRouter(prefix="/api/v1/workspaces/{workspace_id}/renders", tags=["renders"])
 MAX_IMAGE_BYTES = 12 * 1024 * 1024
@@ -44,7 +51,7 @@ IMAGE_FORMATS = {
     "image/png": "PNG",
     "image/webp": "WEBP",
 }
-DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / ".local"
+DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / ".local"
 
 
 def data_dir() -> Path:
@@ -158,7 +165,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
 
 def _render(inputs: list[Path], output: Path, scenes: list[str] | None = None) -> None:
-    script = Path(__file__).resolve().parents[2] / "spikes" / "phase0_video" / "render_sample.sh"
+    script = Path(__file__).resolve().parents[3] / "spikes" / "phase0_video" / "render_sample.sh"
     if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
         raise RuntimeError("FFmpeg and ffprobe are required on PATH")
     args = ["bash", str(script), *map(str, inputs), str(output)]

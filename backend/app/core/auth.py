@@ -10,9 +10,9 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
-from app.db import get_db
-from app.models import OrganizationMember, SessionToken, User
+from app.core.config import get_settings
+from app.core.db import get_db
+from app.core.models import OrganizationMember, SessionToken, User
 
 password_hasher = PasswordHasher()
 

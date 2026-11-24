@@ -1,5 +1,10 @@
 # Session handoff
 
+## Backend package split (2026-11-24)
+
+- Moved the 17 flat backend modules into `app/core`, `catalog`, `content`, `publishing` and `insights` with `git mv`, switched imports and monkeypatch strings to absolute `app.<package>.<module>` paths, and fixed the `__file__`-relative paths in `core/config.py` and `content/renders.py`. The worker command is now `python -m app.publishing.campaign_worker` in `compose.staging.yml`. No behavior change.
+- Verified backend pytest (36 passed, 3 FFmpeg skips), SQLite Alembic upgrade, drift check and downgrade, imports sorted with ruff (77 pre-existing lint findings remain, down from 79), and the Docker staging smoke (API release check, clean browser and no-Computer-Use check; worker completed a job). Not rerun: backup/restore drill, Postgres migration. Web `features/` split is still deferred.
+
 ## Repository structure cleanup (2026-11-24)
 
 - Committed the pending PRD-03 and no-Computer-Use work in two commits, then reorganized without behavior changes: `apps/safari-extension` is now `apps/extension`; the Master Prompt moved to `docs/product/prompts/`; the launcher moved to `scripts/open-studio.command` (root `Open Studio.command` is a thin wrapper for Finder); `sites/affiliate-studio` and `assets/facebook-page` moved under `marketing/`; `drafts/fbkitchen01` moved to `docs/evidence/`; older handoff entries moved to `docs/agent/archive/`. Links in README, AGENTS.md, CLAUDE.md, ignore files and the Computer Use check were updated.

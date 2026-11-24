@@ -19,9 +19,15 @@ from fastapi.responses import FileResponse
 from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field, HttpUrl
 
-from .auth import WorkspaceContext, require_workspace
-from .flow_preview import MAX_FLOW_BYTES, render_flow_preview
-from .renders import IMAGE_FORMATS, MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS, _render, render_root
+from app.content.flow_preview import MAX_FLOW_BYTES, render_flow_preview
+from app.content.renders import (
+    IMAGE_FORMATS,
+    MAX_IMAGE_BYTES,
+    MAX_IMAGE_PIXELS,
+    _render,
+    render_root,
+)
+from app.core.auth import WorkspaceContext, require_workspace
 
 router = APIRouter(prefix="/api/v1/workspaces/{workspace_id}/purchase-previews", tags=["purchase previews"])
 Context = Annotated[WorkspaceContext, Depends(require_workspace)]

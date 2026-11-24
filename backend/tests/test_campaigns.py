@@ -8,15 +8,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app import campaign_worker
-from app.auth import WorkspaceContext, require_workspace
-from app.campaigns import CampaignItem, CampaignWorkerState, router
-from app.config import Settings, get_settings
-from app.db import Base, get_db
-from app.meta_publishing import MetaPublication
-from app.models import Organization, OrganizationMember, User
-from app.products import Product
-from app.renders import Render
+from app.catalog.products import Product
+from app.content.renders import Render
+from app.core.auth import WorkspaceContext, require_workspace
+from app.core.config import Settings, get_settings
+from app.core.db import Base, get_db
+from app.core.models import Organization, OrganizationMember, User
+from app.publishing import campaign_worker
+from app.publishing.campaigns import CampaignItem, CampaignWorkerState, router
+from app.publishing.meta_publishing import MetaPublication
 
 
 def test_campaign_schedule_pause_resume_reconciliation_and_isolation(monkeypatch, tmp_path):

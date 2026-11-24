@@ -60,7 +60,7 @@ services:
 
   worker:
     <<: *backend
-    command: ["python", "-m", "app.campaign_worker"]
+    command: ["python", "-m", "app.publishing.campaign_worker"]
     volumes:
       - render_data:/var/lib/studio/renders:ro
     depends_on:

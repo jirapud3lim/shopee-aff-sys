@@ -1,6 +1,7 @@
 """Keep Shopee channel-link verification with the saved link."""
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "bfe70e3af482"

@@ -13,10 +13,10 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Mapped, Session, mapped_column
 from starlette.concurrency import run_in_threadpool
 
-from .auth import WorkspaceContext, require_workspace
-from .db import Base, get_db
-from .products import ChannelLink
-from .shopee_report_csv import MONEY_SCALE, read_report
+from app.catalog.products import ChannelLink
+from app.core.auth import WorkspaceContext, require_workspace
+from app.core.db import Base, get_db
+from app.insights.shopee_report_csv import MONEY_SCALE, read_report
 
 router = APIRouter(prefix="/api/v1/workspaces/{workspace_id}/affiliate-reports", tags=["affiliate reports"])
 Context = Annotated[WorkspaceContext, Depends(require_workspace)]

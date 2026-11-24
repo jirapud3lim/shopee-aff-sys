@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from app.renders import Render, _render, _write_normalized_image, render_video_path
+from app.content.renders import Render, _render, _write_normalized_image, render_video_path
 
 
 def test_render_video_path_only_returns_artifacts_under_render_root(tmp_path: Path, monkeypatch):

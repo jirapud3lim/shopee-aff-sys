@@ -14,11 +14,11 @@ from PIL import Image
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy.orm import Session
 
-from .auth import WorkspaceContext, require_workspace
-from .db import get_db
-from .products import ChannelLink, ChannelLinkOut, Product
-from .renders import render_root
-from .shopee_offers import ShopeeOffer
+from app.catalog.products import ChannelLink, ChannelLinkOut, Product
+from app.catalog.shopee_offers import ShopeeOffer
+from app.content.renders import render_root
+from app.core.auth import WorkspaceContext, require_workspace
+from app.core.db import get_db
 
 router = APIRouter(prefix="/api/v1/workspaces/{workspace_id}/storyboards", tags=["storyboards"])
 Context = Annotated[WorkspaceContext, Depends(require_workspace)]

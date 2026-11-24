@@ -11,8 +11,8 @@ from sqlalchemy.dialects.postgresql import insert as postgres_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
-from .auth import require_workspace
-from .db import Base, get_db
+from app.core.auth import require_workspace
+from app.core.db import Base, get_db
 
 router = APIRouter(prefix="/api/v1/workspaces/{workspace_id}/shopee-offers", tags=["shopee-offers"])
 OfferId = Annotated[str, StringConstraints(pattern=r"^[1-9][0-9]{0,19}$")]

@@ -9,13 +9,13 @@ from sqlalchemy import Boolean, ForeignKeyConstraint, String, Text, select, upda
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
-from .auth import WorkspaceContext, require_workspace
-from .config import Settings, get_settings
-from .db import Base, get_db
-from .meta_graph import MetaError, MetaGraph
-from .products import ChannelLink, Product
-from .publishing import MAX_VIDEO_BYTES
-from .renders import Render, render_video_path
+from app.catalog.products import ChannelLink, Product
+from app.content.renders import Render, render_video_path
+from app.core.auth import WorkspaceContext, require_workspace
+from app.core.config import Settings, get_settings
+from app.core.db import Base, get_db
+from app.publishing.meta_graph import MetaError, MetaGraph
+from app.publishing.publishing import MAX_VIDEO_BYTES
 
 router = APIRouter(prefix="/api/v1/workspaces/{workspace_id}/publishing/meta", tags=["publishing"])
 Context = Annotated[WorkspaceContext, Depends(require_workspace)]

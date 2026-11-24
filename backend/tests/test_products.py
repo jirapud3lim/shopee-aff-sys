@@ -7,10 +7,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.auth import require_workspace
-from app.db import Base, get_db
-from app.models import Organization  # register organizations table before create_all
-from app.products import router
+from app.catalog.products import router
+from app.core.auth import require_workspace
+from app.core.db import Base, get_db
+from app.core.models import Organization  # register organizations table before create_all
 
 
 @dataclass

@@ -8,14 +8,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app import google_trends
-from app.affiliate_reports import router as reports_router
-from app.auth import WorkspaceContext, require_workspace
-from app.db import Base, get_db
-from app.models import Organization
-from app.products import ChannelLink, Product
-from app.shopee_offers import ShopeeOffer
-from app.shopee_report_csv import BANGKOK
+from app.catalog.products import ChannelLink, Product
+from app.catalog.shopee_offers import ShopeeOffer
+from app.core.auth import WorkspaceContext, require_workspace
+from app.core.db import Base, get_db
+from app.core.models import Organization
+from app.insights import google_trends
+from app.insights.affiliate_reports import router as reports_router
+from app.insights.shopee_report_csv import BANGKOK
 
 
 def test_feed_age_and_thai_matches_are_workspace_scoped(monkeypatch):

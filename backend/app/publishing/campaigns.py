@@ -8,16 +8,24 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from sqlalchemy import (
-    BigInteger, Boolean, ForeignKey, ForeignKeyConstraint, Index, String, Text, UniqueConstraint,
-    select, update,
+    BigInteger,
+    Boolean,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+    select,
+    update,
 )
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
-from .auth import WorkspaceContext, require_workspace
-from .config import Settings, get_settings
-from .db import Base, get_db
-from .meta_publishing import MetaPublication, PublishInput, available, publication
-from .renders import Render
+from app.content.renders import Render
+from app.core.auth import WorkspaceContext, require_workspace
+from app.core.config import Settings, get_settings
+from app.core.db import Base, get_db
+from app.publishing.meta_publishing import MetaPublication, PublishInput, available, publication
 
 router = APIRouter(prefix="/api/v1/workspaces/{workspace_id}/campaigns", tags=["campaigns"])
 Context = Annotated[WorkspaceContext, Depends(require_workspace)]
