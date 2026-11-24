@@ -38,6 +38,8 @@ Apply the [product pipeline rules](AGENTS.md#product-pipeline-rules) and [AI con
 
 Apply the [saved character and voice rule in AGENTS.md](AGENTS.md#product-videos-and-voiceovers) to every product video or voiceover, including audio-only edits.
 
+Follow the [narrated video workflow in AGENTS.md](AGENTS.md#narrated-video-workflow). Prepare and check standalone narration before video generation. For Storytelling, use the approved EP.1 voice and delivery in the [Storytelling voiceover master prompt](docs/product/prompts/Storytelling_Voiceover_Master_Prompt.md).
+
 ## Google Flow
 
 Follow the [Google Flow workflow in AGENTS.md](AGENTS.md#google-flow-workflow). Analyze the exact product and prepare its reference stills before sending a separate storyboard prompt. Use photorealistic still images in every storyboard panel and verify them before presenting the storyboard for explicit approval. Generate every approved shot in vertical 9:16 with Veo 3.1 Lite.
